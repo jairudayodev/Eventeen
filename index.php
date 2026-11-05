@@ -1,3 +1,50 @@
+<?php
+declare(strict_types=1);
+require __DIR__ . '/config.php';
+
+if (!empty($_SESSION['usuario'])) {
+    header('Location: ' . profileHomePath((string) ($_SESSION['usuario']['perfil'] ?? 'participante')));
+    exit;
+}
+
+$erro = null;
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    validateCsrfToken();
+    $email = filter_var(trim((string) ($_POST['email'] ?? '')), FILTER_VALIDATE_EMAIL);
+    $senha = (string) ($_POST['senha'] ?? '');
+
+    if (!$email || $senha === '') {
+        $erro = 'Informe um e-mail válido e sua senha.';
+    } else {
+        $consulta = $pdo->prepare('SELECT id, nome, email, senha_hash, perfil FROM usuarios WHERE email = :email LIMIT 1');
+        $consulta->execute(['email' => $email]);
+        $usuario = $consulta->fetch();
+
+        if ($usuario && password_verify($senha, $usuario['senha_hash'])) {
+            session_regenerate_id(true);
+            $_SESSION['usuario'] = [
+                'id' => (int) $usuario['id'],
+                'nome' => $usuario['nome'],
+                'email' => $usuario['email'],
+                'perfil' => $usuario['perfil'],
+            ];
+            if (isset($_POST['manter-conectado'])) {
+                setcookie(session_name(), session_id(), [
+                    'expires' => time() + 30 * 24 * 60 * 60,
+                    'path' => '/',
+                    'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+                    'httponly' => true,
+                    'samesite' => 'Lax',
+                ]);
+            }
+            header('Location: ' . profileHomePath((string) $usuario['perfil']));
+            exit;
+        }
+
+        $erro = 'E-mail ou senha incorretos.';
+    }
+}
+?>
 <!-- Vitor; Edu esteve aqui -->
  <!-- Gustavinho do grau esteve aq -->
 <!-- Jair Bolsonaro esteve aq -->
@@ -24,7 +71,12 @@
                 <p class="subtitulo">Eventos acadêmicos em um só lugar.</p>
             </header>
 
-            <form class="auth-form" action="inicio-participante.php" method="post">
+            <?php if ($erro !== null): ?>
+                <p class="form-notice form-notice--error" role="alert"><?= h($erro) ?></p>
+            <?php endif; ?>
+
+            <form class="auth-form" action="index.php" method="post">
+                <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                 <div class="campo">
                     <label for="email">E-mail</label>
                     <input type="email" id="email" name="email" autocomplete="email" placeholder="seuemail@exemplo.com" required>
