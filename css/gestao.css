@@ -221,6 +221,12 @@
     line-height: 1.5;
 }
 
+.management-notice--error {
+    border-color: #f0c7cd;
+    background: #fff0f1;
+    color: #a61126;
+}
+
 .management-kpis {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -488,6 +494,23 @@
 .management-select {
     width: auto;
     min-width: 160px;
+}
+
+.management-select--multiple {
+    width: 100%;
+    min-height: 140px;
+}
+
+.management-event-filters {
+    flex: 1;
+}
+
+.management-event-actions {
+    align-items: flex-start;
+}
+
+.management-event-actions form {
+    margin: 0;
 }
 
 .management-form-grid {

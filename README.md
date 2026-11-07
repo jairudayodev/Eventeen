@@ -18,6 +18,7 @@ mysql -u root < banco.sql
 - Busca e filtro de eventos publicados e futuros.
 - Consulta de detalhes e inscrição, com verificação de vagas e prevenção de inscrições duplicadas.
 - Consulta e cancelamento de inscrições futuras.
+- Cadastro, consulta, edição, cancelamento e encerramento de eventos com vários organizadores; as alterações preservam inscrições e demais registros.
 - Painel inicial, histórico de participação e certificados, conforme os dados registrados.
 
 ## Organização das telas
@@ -34,7 +35,9 @@ Os nomes antigos das páginas do participante na raiz continuam disponíveis com
 
 O cadastro público cria contas de participante. Para conceder acesso de organizador ou administrador, altere o campo `perfil` do usuário na tabela `usuarios`; o login encaminha cada perfil para sua área e as páginas verificam a permissão necessária.
 
-As telas de gestão seguem os protótipos, são responsivas e estão organizadas por perfil. Por enquanto, mostram dados ilustrativos e seus controles estão desativados; cadastro e administração de eventos, programação, presença, relatórios, parceiros e finanças ainda precisam ser conectados ao banco. As telas do participante continuam usando as funcionalidades existentes.
+As telas de gestão seguem os protótipos, são responsivas e estão organizadas por perfil. O gerenciamento de eventos usa o banco de dados; programação, presença, relatórios, parceiros e finanças ainda são prévias ilustrativas.
+
+Para bancos existentes, reimporte `banco.sql` para adicionar a tabela de vínculos entre eventos e organizadores e o status de evento encerrado. Eventos existentes sem vínculo não aparecem na área de gestão até que recebam ao menos um organizador em `evento_organizadores`.
 
 Presenças e certificados dependem de serem registrados na tabela `inscricoes`.
 

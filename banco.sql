@@ -29,12 +29,26 @@ CREATE TABLE IF NOT EXISTS eventos (
     data_inicio DATETIME NOT NULL,
     data_fim DATETIME NOT NULL,
     capacidade INT UNSIGNED NULL,
-    status ENUM('rascunho', 'publicado', 'cancelado') NOT NULL DEFAULT 'publicado',
+    status ENUM('rascunho', 'publicado', 'cancelado', 'encerrado') NOT NULL DEFAULT 'publicado',
     criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     KEY idx_eventos_status_data (status, data_inicio),
     KEY idx_eventos_categoria (categoria)
+) ENGINE=InnoDB;
+
+ALTER TABLE eventos
+    MODIFY status ENUM('rascunho', 'publicado', 'cancelado', 'encerrado') NOT NULL DEFAULT 'publicado';
+
+CREATE TABLE IF NOT EXISTS evento_organizadores (
+    evento_id BIGINT UNSIGNED NOT NULL,
+    usuario_id BIGINT UNSIGNED NOT NULL,
+    PRIMARY KEY (evento_id, usuario_id),
+    KEY idx_evento_organizadores_usuario (usuario_id),
+    CONSTRAINT fk_evento_organizadores_evento
+        FOREIGN KEY (evento_id) REFERENCES eventos (id) ON DELETE CASCADE,
+    CONSTRAINT fk_evento_organizadores_usuario
+        FOREIGN KEY (usuario_id) REFERENCES usuarios (id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS inscricoes (

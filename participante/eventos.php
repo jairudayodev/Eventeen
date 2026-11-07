@@ -69,7 +69,7 @@ $eventos = $consulta->fetchAll();
                             <div class="app-event-card__meta">
                                 <span class="app-event-card__category"><?= h($evento['categoria']) ?></span>
                                 <h3 class="app-event-card__title"><?= h($evento['titulo']) ?></h3>
-                                <div class="app-event-card__details"><span>📅 <?= h(formatDateTime($evento['data_inicio'])) ?></span></div>
+                                <div class="app-event-card__details"><span>📅 <?= h(formatDateTime($evento['data_inicio'])) ?> – <?= h(formatDateTime($evento['data_fim'])) ?></span></div>
                                 <div class="app-event-card__details"><span>📍 <?= h($evento['local']) ?></span></div>
                                 <span class="app-event-card__status"><?= $vagas === null ? 'Inscrições abertas' : ($vagas > 0 ? $vagas . ' vagas disponíveis' : 'Vagas esgotadas') ?></span>
                             </div>

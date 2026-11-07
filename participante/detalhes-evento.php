@@ -103,8 +103,8 @@ $vagas = $evento['capacidade'] === null ? null : max(0, (int) $evento['capacidad
                 <p class="app-event-description"><?= nl2br(h($evento['descricao'])) ?></p>
                 <div class="app-detail-list">
                     <div class="app-detail-item"><div class="app-detail-item__icon" aria-hidden="true">📅</div><div><strong>Início</strong><?= h(formatDateTime($evento['data_inicio'])) ?></div></div>
+                    <div class="app-detail-item"><div class="app-detail-item__icon" aria-hidden="true">⏱️</div><div><strong>Encerramento</strong><?= h(formatDateTime($evento['data_fim'])) ?></div></div>
                     <div class="app-detail-item"><div class="app-detail-item__icon" aria-hidden="true">📍</div><div><strong>Local</strong><?= h($evento['local']) ?></div></div>
-                    <div class="app-detail-item"><div class="app-detail-item__icon" aria-hidden="true">⏱️</div><div><strong>Duração</strong><?= h((string) round((strtotime($evento['data_fim']) - strtotime($evento['data_inicio'])) / 3600, 1)) ?> horas</div></div>
                     <div class="app-detail-item"><div class="app-detail-item__icon" aria-hidden="true">🎟️</div><div><strong>Vagas</strong><?= $vagas === null ? 'Sem limite informado' : (int) $vagas . ' disponíveis' ?></div></div>
                 </div>
                 <div class="app-action-group">
