@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . '/../config.php';
+require __DIR__ . '/../includes/inscricoes.php';
 $usuario = requireRole('participante');
 $inscricaoId = filter_var($_GET['id'] ?? $_POST['inscricao_id'] ?? null, FILTER_VALIDATE_INT);
 if (!$inscricaoId || $inscricaoId < 1) {
@@ -22,14 +23,7 @@ if (!$inscricao) {
 $erro = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     validateCsrfToken();
-    $cancelar = $pdo->prepare(
-        "UPDATE inscricoes i JOIN eventos e ON e.id = i.evento_id
-         SET i.status = 'cancelada'
-         WHERE i.id = :id AND i.usuario_id = :usuario_id
-           AND i.status = 'ativa' AND e.data_inicio > NOW()"
-    );
-    $cancelar->execute(['id' => $inscricaoId, 'usuario_id' => (int) $usuario['id']]);
-    if ($cancelar->rowCount() === 1) {
+    if (cancelarInscricao($pdo, (int) $usuario['id'], $inscricaoId)) {
         header('Location: minhas-inscricoes.php?cancelamento=concluido');
         exit;
     }

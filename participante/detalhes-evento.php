@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . '/../config.php';
+require __DIR__ . '/../includes/inscricoes.php';
 $usuario = requireRole('participante');
 $eventoId = filter_var($_GET['id'] ?? $_POST['evento_id'] ?? null, FILTER_VALIDATE_INT);
 if (!$eventoId || $eventoId < 1) {
@@ -13,59 +14,17 @@ $erro = false;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     validateCsrfToken();
     try {
-        $pdo->beginTransaction();
-        $consulta = $pdo->prepare('SELECT * FROM eventos WHERE id = :id FOR UPDATE');
-        $consulta->execute(['id' => $eventoId]);
-        $eventoBloqueado = $consulta->fetch();
-        if (!$eventoBloqueado || $eventoBloqueado['status'] !== 'publicado' || strtotime($eventoBloqueado['data_inicio']) <= time()) {
-            throw new DomainException('Este evento não está mais aceitando inscrições.');
-        }
-
-        $consulta = $pdo->prepare(
-            "SELECT id, status FROM inscricoes WHERE usuario_id = :usuario_id AND evento_id = :evento_id"
-        );
-        $consulta->execute(['usuario_id' => (int) $usuario['id'], 'evento_id' => $eventoId]);
-        $inscricaoExistente = $consulta->fetch();
-        if ($inscricaoExistente && $inscricaoExistente['status'] === 'ativa') {
-            throw new DomainException('Você já está inscrito neste evento.');
-        }
-
-        $consulta = $pdo->prepare("SELECT COUNT(*) FROM inscricoes WHERE evento_id = :evento_id AND status = 'ativa'");
-        $consulta->execute(['evento_id' => $eventoId]);
-        $inscritos = (int) $consulta->fetchColumn();
-        if ($eventoBloqueado['capacidade'] !== null && $inscritos >= (int) $eventoBloqueado['capacidade']) {
-            throw new DomainException('As vagas deste evento estão esgotadas.');
-        }
-
-        $consulta = $pdo->prepare(
-            "INSERT INTO inscricoes (usuario_id, evento_id, status)
-             VALUES (:usuario_id, :evento_id, 'ativa')
-             ON DUPLICATE KEY UPDATE
-                status = 'ativa',
-                presenca_confirmada = 0,
-                certificado_url = NULL,
-                inscrito_em = CURRENT_TIMESTAMP"
-        );
-        $consulta->execute(['usuario_id' => (int) $usuario['id'], 'evento_id' => $eventoId]);
-        $pdo->commit();
+        inscreverParticipante($pdo, (int) $usuario['id'], $eventoId);
         header('Location: minhas-inscricoes.php?inscricao=confirmada');
         exit;
     } catch (DomainException $exception) {
-        if ($pdo->inTransaction()) {
-            $pdo->rollBack();
-        }
         $mensagem = $exception->getMessage();
         $erro = true;
-    } catch (Throwable $exception) {
-        if ($pdo->inTransaction()) {
-            $pdo->rollBack();
-        }
-        throw $exception;
     }
 }
 
 $consulta = $pdo->prepare(
-    "SELECT e.*,
+    "SELECT e.*, (e.data_inicio > NOW()) AS aceita_inscricao,
         (SELECT COUNT(*) FROM inscricoes i WHERE i.evento_id = e.id AND i.status = 'ativa') AS inscritos,
         (SELECT i.status FROM inscricoes i WHERE i.evento_id = e.id AND i.usuario_id = :usuario_id LIMIT 1) AS minha_inscricao
      FROM eventos e WHERE e.id = :id AND e.status = 'publicado'"
@@ -110,7 +69,7 @@ $vagas = $evento['capacidade'] === null ? null : max(0, (int) $evento['capacidad
                 <div class="app-action-group">
                     <?php if ($evento['minha_inscricao'] === 'ativa'): ?>
                         <a class="app-button app-button--secondary" href="minhas-inscricoes.php">Você já está inscrito</a>
-                    <?php elseif (strtotime($evento['data_inicio']) > time() && ($vagas === null || $vagas > 0)): ?>
+                    <?php elseif ((int) $evento['aceita_inscricao'] === 1 && ($vagas === null || $vagas > 0)): ?>
                         <form method="post" action="detalhes-evento.php?id=<?= (int) $evento['id'] ?>">
                             <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                             <input type="hidden" name="evento_id" value="<?= (int) $evento['id'] ?>">

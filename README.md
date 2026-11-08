@@ -48,3 +48,13 @@ Com o Apache do XAMPP, acesse `http://localhost/Eventeen/`. Alternativamente, na
 ```sh
 php -S 127.0.0.1:8000
 ```
+
+## Testes de inscrições
+
+Com o MySQL do XAMPP iniciado e o banco `eventeen` criado, execute na raiz do projeto:
+
+```powershell
+& 'C:\xampp\php\php.exe' tests\inscricoes.php
+```
+
+O teste cria dados temporários e valida duplicidade, horário, lotação, cancelamento e oito inscrições concorrentes para um evento com duas vagas; os dados criados são removidos ao final.
