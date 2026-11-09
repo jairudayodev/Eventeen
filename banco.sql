@@ -70,6 +70,70 @@ CREATE TABLE IF NOT EXISTS inscricoes (
         FOREIGN KEY (evento_id) REFERENCES eventos (id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS palestrantes (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    evento_id BIGINT UNSIGNED NOT NULL,
+    nome VARCHAR(150) NOT NULL,
+    email VARCHAR(190) NULL,
+    bio TEXT NULL,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_palestrantes_id_evento (id, evento_id),
+    KEY idx_palestrantes_evento_nome (evento_id, nome),
+    CONSTRAINT fk_palestrantes_evento
+        FOREIGN KEY (evento_id) REFERENCES eventos (id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS espacos (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    evento_id BIGINT UNSIGNED NOT NULL,
+    nome VARCHAR(120) NOT NULL,
+    capacidade INT UNSIGNED NOT NULL,
+    recursos VARCHAR(500) NULL,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_espacos_id_evento (id, evento_id),
+    KEY idx_espacos_evento_nome (evento_id, nome),
+    CONSTRAINT fk_espacos_evento
+        FOREIGN KEY (evento_id) REFERENCES eventos (id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS atividades (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    evento_id BIGINT UNSIGNED NOT NULL,
+    espaco_id BIGINT UNSIGNED NOT NULL,
+    titulo VARCHAR(180) NOT NULL,
+    descricao TEXT NULL,
+    tipo VARCHAR(80) NOT NULL,
+    inicio DATETIME NOT NULL,
+    fim DATETIME NOT NULL,
+    capacidade INT UNSIGNED NOT NULL,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_atividades_id_evento (id, evento_id),
+    KEY idx_atividades_evento_inicio (evento_id, inicio),
+    KEY idx_atividades_espaco_horario (espaco_id, inicio, fim),
+    CONSTRAINT fk_atividades_evento
+        FOREIGN KEY (evento_id) REFERENCES eventos (id) ON DELETE CASCADE,
+    CONSTRAINT fk_atividades_espaco_evento
+        FOREIGN KEY (espaco_id, evento_id) REFERENCES espacos (id, evento_id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS atividade_palestrantes (
+    atividade_id BIGINT UNSIGNED NOT NULL,
+    palestrante_id BIGINT UNSIGNED NOT NULL,
+    evento_id BIGINT UNSIGNED NOT NULL,
+    PRIMARY KEY (atividade_id, palestrante_id),
+    KEY idx_atividade_palestrantes_palestrante (palestrante_id, evento_id),
+    CONSTRAINT fk_atividade_palestrantes_atividade
+        FOREIGN KEY (atividade_id, evento_id) REFERENCES atividades (id, evento_id) ON DELETE CASCADE,
+    CONSTRAINT fk_atividade_palestrantes_palestrante
+        FOREIGN KEY (palestrante_id, evento_id) REFERENCES palestrantes (id, evento_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 INSERT INTO eventos
     (titulo, descricao, categoria, local, data_inicio, data_fim, capacidade, status)
 SELECT 'Conexões Inteligentes',

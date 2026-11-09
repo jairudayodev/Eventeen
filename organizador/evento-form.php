@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/../includes/gestao.php';
+require_once __DIR__ . '/../includes/programacao.php';
 $usuario = requireRole('organizador');
 
 $idRecebido = $_GET['id'] ?? $_POST['evento_id'] ?? null;
@@ -171,6 +172,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($capacidade < (int) $consulta->fetchColumn()) {
                     throw new DomainException('A capacidade não pode ser menor que o número de inscrições ativas.');
                 }
+                validarLimitesAtividadesEvento($pdo, $eventoId, $dataInicio, $dataFim, $capacidade);
                 $novoStatus = in_array($statusAtual, ['cancelado', 'encerrado'], true)
                     ? $statusAtual
                     : $texto['status'];

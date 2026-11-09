@@ -19,6 +19,8 @@ mysql -u root < banco.sql
 - Consulta de detalhes e inscrição, com verificação de vagas e prevenção de inscrições duplicadas.
 - Consulta e cancelamento de inscrições futuras.
 - Cadastro, consulta, edição, cancelamento e encerramento de eventos com vários organizadores; as alterações preservam inscrições e demais registros.
+- Cadastro e edição de palestrantes, espaços e atividades por evento, com vínculo restrito aos eventos do organizador.
+- Validação da capacidade das atividades em relação ao espaço e ao evento, dos horários dentro do período do evento e de conflitos de espaço e palestrante.
 - Painel inicial, histórico de participação e certificados, conforme os dados registrados.
 
 ## Organização das telas
@@ -35,9 +37,9 @@ Os nomes antigos das páginas do participante na raiz continuam disponíveis com
 
 O cadastro público cria contas de participante. Para conceder acesso de organizador ou administrador, altere o campo `perfil` do usuário na tabela `usuarios`; o login encaminha cada perfil para sua área e as páginas verificam a permissão necessária.
 
-As telas de gestão seguem os protótipos, são responsivas e estão organizadas por perfil. O gerenciamento de eventos usa o banco de dados; programação, presença, relatórios, parceiros e finanças ainda são prévias ilustrativas.
+As telas de gestão seguem os protótipos, são responsivas e estão organizadas por perfil. O gerenciamento de eventos, palestrantes, espaços e programação usa o banco de dados; presença, relatórios, parceiros e finanças ainda são prévias ilustrativas.
 
-Para bancos existentes, reimporte `banco.sql` para adicionar a tabela de vínculos entre eventos e organizadores e o status de evento encerrado. Eventos existentes sem vínculo não aparecem na área de gestão até que recebam ao menos um organizador em `evento_organizadores`.
+Para bancos existentes, reimporte `banco.sql` para criar as tabelas da programação, adicionar a tabela de vínculos entre eventos e organizadores e o status de evento encerrado. Eventos existentes sem vínculo não aparecem na área de gestão até que recebam ao menos um organizador em `evento_organizadores`.
 
 Presenças e certificados dependem de serem registrados na tabela `inscricoes`.
 
@@ -58,3 +60,13 @@ Com o MySQL do XAMPP iniciado e o banco `eventeen` criado, execute na raiz do pr
 ```
 
 O teste cria dados temporários e valida duplicidade, horário, lotação, cancelamento e oito inscrições concorrentes para um evento com duas vagas; os dados criados são removidos ao final.
+
+## Testes de programação
+
+Com o MySQL do XAMPP iniciado e o banco `eventeen` atualizado por `banco.sql`, execute:
+
+```powershell
+& 'C:\xampp\php\php.exe' tests\programacao.php
+```
+
+O teste verifica vínculos, capacidade, período do evento, conflitos de espaço e palestrantes e operações de edição e exclusão. Os dados criados são removidos ao final.
