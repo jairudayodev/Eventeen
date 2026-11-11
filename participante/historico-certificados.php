@@ -1,37 +1,15 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . '/../config.php';
+require_once __DIR__ . '/../includes/relatorios.php';
 $usuario = requireRole('participante');
 $userId = (int) $usuario['id'];
 
-$consulta = $pdo->prepare(
-    "SELECT COUNT(*) FROM inscricoes i JOIN eventos e ON e.id = i.evento_id
-     WHERE i.usuario_id = :usuario_id AND i.status = 'ativa' AND e.data_fim < NOW()"
-);
-$consulta->execute(['usuario_id' => $userId]);
-$totalEventos = (int) $consulta->fetchColumn();
-$consulta = $pdo->prepare(
-    "SELECT COUNT(*) FROM inscricoes
-     WHERE usuario_id = :usuario_id AND status = 'ativa' AND presenca_confirmada = 1"
-);
-$consulta->execute(['usuario_id' => $userId]);
-$totalPresencas = (int) $consulta->fetchColumn();
-$consulta = $pdo->prepare(
-    "SELECT COUNT(*) FROM inscricoes
-     WHERE usuario_id = :usuario_id AND status = 'ativa'
-       AND presenca_confirmada = 1 AND certificado_url IS NOT NULL"
-);
-$consulta->execute(['usuario_id' => $userId]);
-$totalCertificados = (int) $consulta->fetchColumn();
-$consulta = $pdo->prepare(
-    "SELECT e.titulo, e.categoria, e.data_inicio, e.data_fim,
-            i.presenca_confirmada, i.certificado_url
-     FROM inscricoes i JOIN eventos e ON e.id = i.evento_id
-     WHERE i.usuario_id = :usuario_id AND i.status = 'ativa' AND e.data_fim < NOW()
-     ORDER BY e.data_inicio DESC"
-);
-$consulta->execute(['usuario_id' => $userId]);
-$historico = $consulta->fetchAll();
+$historico = historicoEventosParticipante($pdo, $userId);
+$atividadesHistorico = historicoAtividadesParticipante($pdo, $userId);
+$totalEventos = count($historico);
+$totalPresencas = count(array_filter($historico, static fn (array $evento): bool => (int) $evento['presenca_confirmada'] === 1));
+$totalCertificados = count(array_filter($historico, static fn (array $evento): bool => (int) $evento['presenca_confirmada'] === 1 && !empty($evento['certificado_url'])));
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -53,6 +31,7 @@ $historico = $consulta->fetchAll();
             <section class="app-stat-grid app-stat-grid--horizontal" aria-label="Estatísticas do histórico">
                 <article class="app-stat-card"><div class="app-stat-card__value"><?= $totalEventos ?></div><div class="app-stat-card__label">Eventos</div></article>
                 <article class="app-stat-card"><div class="app-stat-card__value"><?= $totalPresencas ?></div><div class="app-stat-card__label">Presenças</div></article>
+                <article class="app-stat-card"><div class="app-stat-card__value"><?= count($atividadesHistorico) ?></div><div class="app-stat-card__label">Atividades</div></article>
                 <article class="app-stat-card"><div class="app-stat-card__value"><?= $totalCertificados ?></div><div class="app-stat-card__label">Certificados</div></article>
             </section>
             <section class="app-section app-event-list" aria-label="Eventos participados">
@@ -72,6 +51,26 @@ $historico = $consulta->fetchAll();
                         <?php else: ?>
                             <span class="app-event-card__cta app-event-card__cta--disabled">Certificado indisponível</span>
                         <?php endif; ?>
+                    </article>
+                <?php endforeach; ?>
+            </section>
+            <section class="app-section app-event-list" aria-label="Atividades com presença confirmada">
+                <header class="app-header"><h2>Atividades com presença confirmada</h2></header>
+                <?php if (!$atividadesHistorico): ?><p class="app-empty">Suas atividades concluídas aparecerão aqui após a confirmação de presença.</p><?php endif; ?>
+                <?php foreach ($atividadesHistorico as $atividade): ?>
+                    <article class="app-event-card">
+                        <div class="app-event-card__inner">
+                            <div class="app-event-card__art" aria-hidden="true">✓</div>
+                            <div class="app-event-card__meta">
+                                <h3 class="app-event-card__title"><?= h($atividade['atividade_titulo']) ?></h3>
+                                <div class="app-event-card__details">
+                                    <span><?= h($atividade['evento_titulo']) ?></span>
+                                    <span><?= h(date('d/m/Y', strtotime($atividade['inicio']))) ?> · <?= h(date('H:i', strtotime($atividade['inicio']))) ?>–<?= h(date('H:i', strtotime($atividade['fim']))) ?></span>
+                                    <span><?= h($atividade['espaco_nome']) ?></span>
+                                </div>
+                                <span class="app-event-card__status">✓ Presença confirmada</span>
+                            </div>
+                        </div>
                     </article>
                 <?php endforeach; ?>
             </section>
