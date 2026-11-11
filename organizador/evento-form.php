@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/../includes/gestao.php';
-require_once __DIR__ . '/../includes/programacao.php';
+require_once __DIR__ . '/../includes/financeiro.php';
 $usuario = requireRole('organizador');
 
 $idRecebido = $_GET['id'] ?? $_POST['evento_id'] ?? null;
@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     validateCsrfToken();
 
     $texto = [];
-    foreach (['titulo', 'descricao', 'categoria', 'local', 'inicio', 'fim', 'capacidade', 'status'] as $campo) {
+    foreach (['titulo', 'descricao', 'categoria', 'local', 'inicio', 'fim', 'capacidade', 'valor_inscricao', 'status'] as $campo) {
         $valor = $_POST[$campo] ?? '';
         if (!is_string($valor)) {
             $mensagem = 'Verifique os dados informados e tente novamente.';
@@ -127,6 +127,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $mensagem = 'Preencha título, local e capacidade positiva. Verifique também os limites dos campos.';
         $erro = true;
     }
+    $valorInscricaoCentavos = 0;
+    if (!$erro && $texto['valor_inscricao'] !== '') {
+        try {
+            $valorInscricaoCentavos = financeiroCentavos($texto['valor_inscricao'], true);
+        } catch (DomainException $exception) {
+            $mensagem = 'Informe o valor da inscrição no formato 25,00 ou deixe em branco para evento gratuito.';
+            $erro = true;
+        }
+    }
     if (!$erro && count($idsOrganizadores) < 1) {
         $mensagem = 'O evento deve ter ao menos um organizador.';
         $erro = true;
@@ -179,7 +188,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $atualizar = $pdo->prepare(
                     'UPDATE eventos SET
                         titulo = :titulo, descricao = :descricao, categoria = :categoria, local = :local,
-                        data_inicio = :data_inicio, data_fim = :data_fim, capacidade = :capacidade, status = :status
+                        data_inicio = :data_inicio, data_fim = :data_fim, capacidade = :capacidade,
+                        valor_inscricao = :valor_inscricao, status = :status
                      WHERE id = :evento_id'
                 );
                 $atualizar->execute([
@@ -190,6 +200,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'data_inicio' => $dataInicio,
                     'data_fim' => $dataFim,
                     'capacidade' => $capacidade,
+                    'valor_inscricao' => financeiroDecimal($valorInscricaoCentavos),
                     'status' => $novoStatus,
                     'evento_id' => $eventoId,
                 ]);
@@ -198,9 +209,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $inserir = $pdo->prepare(
                     'INSERT INTO eventos
-                        (titulo, descricao, categoria, local, data_inicio, data_fim, capacidade, status)
+                        (titulo, descricao, categoria, local, data_inicio, data_fim, capacidade, valor_inscricao, status)
                      VALUES
-                        (:titulo, :descricao, :categoria, :local, :data_inicio, :data_fim, :capacidade, :status)'
+                        (:titulo, :descricao, :categoria, :local, :data_inicio, :data_fim, :capacidade, :valor_inscricao, :status)'
                 );
                 $inserir->execute([
                     'titulo' => $texto['titulo'],
@@ -210,6 +221,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'data_inicio' => $dataInicio,
                     'data_fim' => $dataFim,
                     'capacidade' => $capacidade,
+                    'valor_inscricao' => financeiroDecimal($valorInscricaoCentavos),
                     'status' => $texto['status'],
                 ]);
                 $eventoSalvarId = (int) $pdo->lastInsertId();
@@ -251,6 +263,9 @@ $valores = [
     'inicio' => isset($evento['data_inicio']) ? str_replace(' ', 'T', substr((string) $evento['data_inicio'], 0, 16)) : '',
     'fim' => isset($evento['data_fim']) ? str_replace(' ', 'T', substr((string) $evento['data_fim'], 0, 16)) : '',
     'capacidade' => (string) ($evento['capacidade'] ?? ''),
+    'valor_inscricao' => isset($evento['valor_inscricao']) && (float) $evento['valor_inscricao'] > 0
+        ? number_format((float) $evento['valor_inscricao'], 2, ',', '')
+        : '',
     'status' => in_array($evento['status'] ?? 'publicado', ['rascunho', 'publicado'], true)
         ? (string) ($evento['status'] ?? 'publicado')
         : 'publicado',
@@ -326,6 +341,11 @@ renderManagementStart(
             <label for="vagas-evento">Limite de participantes</label>
             <input id="vagas-evento" name="capacidade" class="management-input" type="number" min="1" step="1" required value="<?= h($valores['capacidade']) ?>">
             <?php if ($evento !== null): ?><small class="management-muted"><?= $inscritos ?> inscrição(ões) ativa(s); a capacidade não pode ficar abaixo desse número.</small><?php endif; ?>
+        </div>
+        <div class="management-field">
+            <label for="valor-evento">Valor da inscrição (R$) <span class="management-muted">(opcional)</span></label>
+            <input id="valor-evento" name="valor_inscricao" class="management-input" type="text" inputmode="decimal" maxlength="16" value="<?= h($valores['valor_inscricao']) ?>" placeholder="Em branco = gratuito">
+            <small class="management-muted">O sistema apenas registra os pagamentos informados pela organização; não há cobrança on-line.</small>
         </div>
         <div class="management-field">
             <label for="status-evento">Publicação</label>

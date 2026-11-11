@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require __DIR__ . '/../config.php';
 require __DIR__ . '/../includes/inscricoes.php';
+require_once __DIR__ . '/../includes/financeiro.php';
 $usuario = requireRole('participante');
 $eventoId = filter_var($_GET['id'] ?? $_POST['evento_id'] ?? null, FILTER_VALIDATE_INT);
 if (!$eventoId || $eventoId < 1) {
@@ -36,6 +37,20 @@ if (!$evento) {
     exit('Evento não encontrado.');
 }
 $vagas = $evento['capacidade'] === null ? null : max(0, (int) $evento['capacidade'] - (int) $evento['inscritos']);
+
+$consulta = $pdo->prepare(
+    "SELECT a.id, a.titulo, a.tipo, a.descricao, a.inicio, a.fim, s.nome AS espaco_nome,
+            (SELECT GROUP_CONCAT(p.nome ORDER BY p.nome SEPARATOR ', ')
+             FROM atividade_palestrantes ap
+             JOIN palestrantes p ON p.id = ap.palestrante_id AND p.evento_id = ap.evento_id
+             WHERE ap.atividade_id = a.id) AS palestrantes
+     FROM atividades a
+     JOIN espacos s ON s.id = a.espaco_id AND s.evento_id = a.evento_id
+     WHERE a.evento_id = :evento_id
+     ORDER BY a.inicio, a.id"
+);
+$consulta->execute(['evento_id' => (int) $evento['id']]);
+$programacao = $consulta->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -64,8 +79,24 @@ $vagas = $evento['capacidade'] === null ? null : max(0, (int) $evento['capacidad
                     <div class="app-detail-item"><div class="app-detail-item__icon" aria-hidden="true">📅</div><div><strong>Início</strong><?= h(formatDateTime($evento['data_inicio'])) ?></div></div>
                     <div class="app-detail-item"><div class="app-detail-item__icon" aria-hidden="true">⏱️</div><div><strong>Encerramento</strong><?= h(formatDateTime($evento['data_fim'])) ?></div></div>
                     <div class="app-detail-item"><div class="app-detail-item__icon" aria-hidden="true">📍</div><div><strong>Local</strong><?= h($evento['local']) ?></div></div>
-                    <div class="app-detail-item"><div class="app-detail-item__icon" aria-hidden="true">🎟️</div><div><strong>Vagas</strong><?= $vagas === null ? 'Sem limite informado' : (int) $vagas . ' disponíveis' ?></div></div>
+                    <div class="app-detail-item"><div class="app-detail-item__icon" aria-hidden="true">🎟️</div><div><strong>Vagas</strong><?= $vagas === null ? 'Sem limite informado' : ($vagas > 0 ? (int) $vagas . ' disponíveis' : 'Vagas esgotadas') ?></div></div>
+                    <div class="app-detail-item"><div class="app-detail-item__icon" aria-hidden="true">💳</div><div><strong>Inscrição</strong><?= (float) $evento['valor_inscricao'] > 0 ? h(financeiroMoeda($evento['valor_inscricao'])) . ' · pagamento registrado pela organização' : 'Gratuita' ?></div></div>
                 </div>
+                <section class="app-section" aria-labelledby="programacao-evento">
+                    <h3 id="programacao-evento" class="app-section__title">Programação</h3>
+                    <?php if (!$programacao): ?>
+                        <p class="app-empty">A programação deste evento ainda não foi publicada.</p>
+                    <?php endif; ?>
+                    <?php foreach ($programacao as $atividade): ?>
+                        <div class="app-detail-item">
+                            <div class="app-detail-item__icon" aria-hidden="true">◷</div>
+                            <div>
+                                <strong><?= h(date('d/m H:i', strtotime($atividade['inicio']))) ?>–<?= h(date('H:i', strtotime($atividade['fim']))) ?> · <?= h($atividade['titulo']) ?></strong>
+                                <?= h($atividade['tipo']) ?> · <?= h($atividade['espaco_nome']) ?><?= $atividade['palestrantes'] ? ' · ' . h($atividade['palestrantes']) : '' ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </section>
                 <div class="app-action-group">
                     <?php if ($evento['minha_inscricao'] === 'ativa'): ?>
                         <a class="app-button app-button--secondary" href="minhas-inscricoes.php">Você já está inscrito</a>

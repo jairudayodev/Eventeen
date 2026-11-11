@@ -194,8 +194,8 @@ renderManagementStart($usuario, 'Atividades e programação', 'Monte a agenda do
         <?php endif; ?>
     </form>
     <?php if ($eventoAtual !== null): ?>
-        <?php if (!$espacos): ?>
-            <p class="management-notice">Cadastre ao menos um <a href="espacos.php?evento_id=<?= $eventoId ?>">espaço</a> antes de agendar atividades.</p>
+        <?php if (!$espacos || !$palestrantes): ?>
+            <p class="management-notice">Cadastre ao menos um <a href="espacos.php?evento_id=<?= $eventoId ?>">espaço</a> e um <a href="palestrantes.php?evento_id=<?= $eventoId ?>">palestrante</a> antes de agendar atividades.</p>
         <?php else: ?>
             <form class="management-panel" method="post" action="atividades.php">
                 <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
@@ -234,12 +234,13 @@ renderManagementStart($usuario, 'Atividades e programação', 'Monte a agenda do
                         <input class="management-input" id="capacidade-atividade" name="capacidade" type="number" min="1" max="4294967295" required value="<?= h($form['capacidade']) ?>">
                     </div>
                     <div class="management-field">
-                        <label for="palestrantes-atividade">Palestrantes <span class="management-muted">(opcional)</span></label>
-                        <select class="management-select management-select--multiple" id="palestrantes-atividade" name="palestrantes[]" multiple>
+                        <label for="palestrantes-atividade">Palestrantes</label>
+                        <select class="management-select management-select--multiple" id="palestrantes-atividade" name="palestrantes[]" multiple required>
                             <?php foreach ($palestrantes as $palestrante): ?>
                                 <option value="<?= (int) $palestrante['id'] ?>"<?= in_array((int) $palestrante['id'], $palestrantesSelecionados, true) ? ' selected' : '' ?>><?= h($palestrante['nome']) ?></option>
                             <?php endforeach; ?>
                         </select>
+                        <small class="management-muted">Selecione ao menos um. Use Ctrl (Windows) ou Command (Mac) para escolher mais de um.</small>
                     </div>
                     <div class="management-field management-field--full">
                         <label for="descricao-atividade">Descrição <span class="management-muted">(opcional)</span></label>

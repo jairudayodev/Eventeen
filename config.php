@@ -50,12 +50,44 @@ function validateCsrfToken(): void
 
 function requireLogin(): array
 {
-    if (empty($_SESSION['usuario'])) {
+    global $pdo;
+
+    if (empty($_SESSION['usuario']['id'])) {
         header('Location: ' . applicationRootPrefix() . 'index.php');
         exit;
     }
 
+    // O perfil é relido a cada requisição para que concessões e revogações
+    // feitas pelo administrador tenham efeito imediato (RNF04).
+    $consulta = $pdo->prepare('SELECT id, nome, email, perfil FROM usuarios WHERE id = :id LIMIT 1');
+    $consulta->execute(['id' => (int) $_SESSION['usuario']['id']]);
+    $atual = $consulta->fetch();
+    if (!$atual) {
+        $_SESSION = [];
+        session_destroy();
+        header('Location: ' . applicationRootPrefix() . 'index.php');
+        exit;
+    }
+
+    $_SESSION['usuario'] = [
+        'id' => (int) $atual['id'],
+        'nome' => $atual['nome'],
+        'email' => $atual['email'],
+        'perfil' => $atual['perfil'],
+    ];
+
     return $_SESSION['usuario'];
+}
+
+function applicationBaseUrl(): string
+{
+    $https = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+    $host = (string) ($_SERVER['HTTP_HOST'] ?? 'localhost');
+    if (!preg_match('/^[A-Za-z0-9.\-]+(?::\d{1,5})?$/', $host)) {
+        $host = 'localhost';
+    }
+
+    return ($https ? 'https' : 'http') . '://' . $host . applicationBasePath();
 }
 
 function applicationRootPrefix(): string

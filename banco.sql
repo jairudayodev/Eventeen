@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS eventos (
     data_inicio DATETIME NOT NULL,
     data_fim DATETIME NOT NULL,
     capacidade INT UNSIGNED NULL,
+    valor_inscricao DECIMAL(12,2) NOT NULL DEFAULT 0.00,
     status ENUM('rascunho', 'publicado', 'cancelado', 'encerrado') NOT NULL DEFAULT 'publicado',
     criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -39,6 +40,16 @@ CREATE TABLE IF NOT EXISTS eventos (
 
 ALTER TABLE eventos
     MODIFY status ENUM('rascunho', 'publicado', 'cancelado', 'encerrado') NOT NULL DEFAULT 'publicado';
+
+-- Atualização de bancos criados por versões anteriores (compatível com MySQL e MariaDB).
+SET @existe := (SELECT COUNT(*) FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'eventos' AND COLUMN_NAME = 'valor_inscricao');
+SET @ddl := IF(@existe = 0,
+    'ALTER TABLE eventos ADD COLUMN valor_inscricao DECIMAL(12,2) NOT NULL DEFAULT 0.00 AFTER capacidade',
+    'DO 0');
+PREPARE comando FROM @ddl;
+EXECUTE comando;
+DEALLOCATE PREPARE comando;
 
 CREATE TABLE IF NOT EXISTS evento_organizadores (
     evento_id BIGINT UNSIGNED NOT NULL,
@@ -56,8 +67,6 @@ CREATE TABLE IF NOT EXISTS inscricoes (
     usuario_id BIGINT UNSIGNED NOT NULL,
     evento_id BIGINT UNSIGNED NOT NULL,
     status ENUM('ativa', 'cancelada') NOT NULL DEFAULT 'ativa',
-    presenca_confirmada TINYINT(1) NOT NULL DEFAULT 0,
-    certificado_url VARCHAR(500) NULL,
     inscrito_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
@@ -166,9 +175,11 @@ CREATE TABLE IF NOT EXISTS patrocinios (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     evento_id BIGINT UNSIGNED NOT NULL,
     parceiro_id BIGINT UNSIGNED NOT NULL,
+    tipo_apoio ENUM('financeiro', 'material', 'institucional') NOT NULL DEFAULT 'financeiro',
     cota VARCHAR(80) NOT NULL,
+    descricao_apoio VARCHAR(500) NULL,
     contrapartida VARCHAR(500) NULL,
-    valor DECIMAL(12,2) NOT NULL,
+    valor DECIMAL(12,2) NULL,
     status ENUM('negociacao', 'confirmado', 'cancelado') NOT NULL DEFAULT 'negociacao',
     criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -180,6 +191,17 @@ CREATE TABLE IF NOT EXISTS patrocinios (
     CONSTRAINT fk_patrocinios_parceiro
         FOREIGN KEY (parceiro_id) REFERENCES parceiros (id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
+
+SET @existe := (SELECT COUNT(*) FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'patrocinios' AND COLUMN_NAME = 'tipo_apoio');
+SET @ddl := IF(@existe = 0,
+    'ALTER TABLE patrocinios ADD COLUMN tipo_apoio ENUM(''financeiro'', ''material'', ''institucional'') NOT NULL DEFAULT ''financeiro'' AFTER parceiro_id, ADD COLUMN descricao_apoio VARCHAR(500) NULL AFTER cota',
+    'DO 0');
+PREPARE comando FROM @ddl;
+EXECUTE comando;
+DEALLOCATE PREPARE comando;
+
+ALTER TABLE patrocinios MODIFY valor DECIMAL(12,2) NULL;
 
 CREATE TABLE IF NOT EXISTS financeiro_lancamentos (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -211,6 +233,45 @@ CREATE TABLE IF NOT EXISTS financeiro_rateios (
         FOREIGN KEY (lancamento_id) REFERENCES financeiro_lancamentos (id) ON DELETE CASCADE,
     CONSTRAINT fk_financeiro_rateios_evento
         FOREIGN KEY (evento_id) REFERENCES eventos (id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS certificados (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    atividade_id BIGINT UNSIGNED NOT NULL,
+    usuario_id BIGINT UNSIGNED NOT NULL,
+    evento_id BIGINT UNSIGNED NOT NULL,
+    codigo_validacao CHAR(16) NOT NULL,
+    carga_horaria DECIMAL(5,2) NOT NULL,
+    emitido_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_certificados_presenca (atividade_id, usuario_id),
+    UNIQUE KEY uq_certificados_codigo (codigo_validacao),
+    KEY idx_certificados_usuario (usuario_id, emitido_em),
+    KEY idx_certificados_evento (evento_id),
+    CONSTRAINT fk_certificados_presenca
+        FOREIGN KEY (atividade_id, usuario_id) REFERENCES presencas_atividades (atividade_id, usuario_id) ON DELETE RESTRICT,
+    CONSTRAINT fk_certificados_evento
+        FOREIGN KEY (evento_id) REFERENCES eventos (id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS pagamentos_inscricoes (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    inscricao_id BIGINT UNSIGNED NOT NULL,
+    registrado_por BIGINT UNSIGNED NOT NULL,
+    valor DECIMAL(12,2) NOT NULL,
+    forma_pagamento ENUM('pix', 'dinheiro', 'cartao', 'transferencia', 'boleto') NOT NULL,
+    status ENUM('pendente', 'confirmado', 'estornado') NOT NULL DEFAULT 'pendente',
+    data_pagamento DATE NULL,
+    data_estorno DATE NULL,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_pagamentos_inscricao (inscricao_id),
+    KEY idx_pagamentos_status (status),
+    CONSTRAINT fk_pagamentos_inscricao
+        FOREIGN KEY (inscricao_id) REFERENCES inscricoes (id) ON DELETE RESTRICT,
+    CONSTRAINT fk_pagamentos_registrado_por
+        FOREIGN KEY (registrado_por) REFERENCES usuarios (id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
 INSERT INTO eventos

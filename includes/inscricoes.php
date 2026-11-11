@@ -40,8 +40,6 @@ function inscreverParticipante(PDO $pdo, int $usuarioId, int $eventoId): void
              VALUES (:usuario_id, :evento_id, 'ativa')
              ON DUPLICATE KEY UPDATE
                 status = 'ativa',
-                presenca_confirmada = 0,
-                certificado_url = NULL,
                 inscrito_em = CURRENT_TIMESTAMP"
         );
         $consulta->execute(['usuario_id' => $usuarioId, 'evento_id' => $eventoId]);
@@ -52,6 +50,26 @@ function inscreverParticipante(PDO $pdo, int $usuarioId, int $eventoId): void
         }
         throw $exception;
     }
+}
+
+/**
+ * Antecedência mínima, em horas, para o participante cancelar a própria inscrição (RN11).
+ */
+const ANTECEDENCIA_CANCELAMENTO_HORAS = 24;
+
+/**
+ * Condição SQL reutilizada na interface e na regra: evento ainda não iniciado,
+ * com pelo menos 24 horas de antecedência e sem presença registrada.
+ * Espera os aliases "i" (inscricoes) e "e" (eventos).
+ */
+function condicaoCancelamentoPermitido(): string
+{
+    return "i.status = 'ativa'
+        AND e.data_inicio > DATE_ADD(NOW(), INTERVAL " . ANTECEDENCIA_CANCELAMENTO_HORAS . " HOUR)
+        AND NOT EXISTS (
+            SELECT 1 FROM presencas_atividades pa
+            WHERE pa.usuario_id = i.usuario_id AND pa.evento_id = i.evento_id
+        )";
 }
 
 function cancelarInscricao(PDO $pdo, int $usuarioId, int $inscricaoId): bool
@@ -67,10 +85,8 @@ function cancelarInscricao(PDO $pdo, int $usuarioId, int $inscricaoId): bool
 
     $pdo->beginTransaction();
     try {
-        $consulta = $pdo->prepare(
-            'SELECT id FROM eventos
-             WHERE id = :id AND data_inicio > NOW() FOR UPDATE'
-        );
+        // Bloqueia o evento para serializar o cancelamento com novas inscrições.
+        $consulta = $pdo->prepare('SELECT id FROM eventos WHERE id = :id FOR UPDATE');
         $consulta->execute(['id' => (int) $eventoId]);
         if (!$consulta->fetch()) {
             $pdo->rollBack();
@@ -82,7 +98,7 @@ function cancelarInscricao(PDO $pdo, int $usuarioId, int $inscricaoId): bool
              SET i.status = 'cancelada'
              WHERE i.id = :id AND i.usuario_id = :usuario_id
                AND i.evento_id = :evento_id
-               AND i.status = 'ativa' AND e.data_inicio > NOW()"
+               AND " . condicaoCancelamentoPermitido()
         );
         $consulta->execute([
             'id' => $inscricaoId,

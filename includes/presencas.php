@@ -52,6 +52,13 @@ function registrarPresencaAtividade(
             ]);
         } else {
             $consulta = $pdo->prepare(
+                'SELECT 1 FROM certificados WHERE atividade_id = :atividade_id AND usuario_id = :usuario_id'
+            );
+            $consulta->execute(['atividade_id' => $atividadeId, 'usuario_id' => $participanteId]);
+            if ($consulta->fetchColumn() !== false) {
+                throw new DomainException('A presença não pode ser removida porque o certificado já foi emitido.');
+            }
+            $consulta = $pdo->prepare(
                 'DELETE FROM presencas_atividades
                  WHERE atividade_id = :atividade_id AND evento_id = :evento_id AND usuario_id = :usuario_id'
             );

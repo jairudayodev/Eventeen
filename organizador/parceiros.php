@@ -38,7 +38,11 @@ try {
                 throw new DomainException('Cadastre ou selecione um evento antes de registrar patrocínios.');
             }
             $parceiroId = programacaoId($_POST['parceiro_id'] ?? null);
-            $valor = financeiroCentavos($_POST['valor'] ?? null);
+            $tipoApoio = programacaoTexto($_POST['tipo_apoio'] ?? 'financeiro', 'tipo de apoio');
+            $valorTexto = programacaoTexto($_POST['valor'] ?? '', 'valor');
+            $valor = $tipoApoio === 'financeiro' || $valorTexto !== ''
+                ? financeiroCentavos($valorTexto, $tipoApoio !== 'financeiro')
+                : 0;
             salvarPatrocinio(
                 $pdo,
                 $eventoId,
@@ -46,7 +50,9 @@ try {
                 $parceiroId,
                 programacaoTexto($_POST['cota'] ?? null, 'cota'),
                 programacaoTexto($_POST['contrapartida'] ?? '', 'contrapartida'),
-                $valor
+                $valor,
+                $tipoApoio,
+                programacaoTexto($_POST['descricao_apoio'] ?? '', 'descrição do apoio')
             );
             header('Location: parceiros.php?evento_id=' . $eventoId . '&resultado=patrocinio');
             exit;
@@ -86,7 +92,7 @@ $parceiros = $consulta->fetchAll();
 $patrocinios = [];
 if ($eventoId !== null) {
     $consulta = $pdo->prepare(
-        'SELECT pa.id, pa.cota, pa.contrapartida, pa.valor, pa.status,
+        'SELECT pa.id, pa.tipo_apoio, pa.cota, pa.descricao_apoio, pa.contrapartida, pa.valor, pa.status,
                 p.nome AS parceiro_nome, p.email AS parceiro_email
          FROM patrocinios pa
          JOIN parceiros p ON p.id = pa.parceiro_id
@@ -110,9 +116,8 @@ if ($mensagem === null && is_string($resultado) && isset($resultados[$resultado]
 renderManagementStart(
     $usuario,
     'Parceiros e patrocínios',
-    'Cadastre parceiros e acompanhe as cotas e contrapartidas de cada evento.',
-    'mais',
-    false
+    'Cadastre parceiros e acompanhe apoios financeiros, materiais e institucionais de cada evento.',
+    'mais'
 );
 ?>
 <?php if ($mensagem !== null): ?>
@@ -176,19 +181,31 @@ renderManagementStart(
                     </select>
                 </div>
                 <div class="management-field">
+                    <label for="tipo-patrocinio">Tipo de apoio</label>
+                    <select class="management-select" id="tipo-patrocinio" name="tipo_apoio" required>
+                        <?php foreach (TIPOS_APOIO as $valorTipo => $rotuloTipo): ?>
+                            <option value="<?= h($valorTipo) ?>"><?= h($rotuloTipo) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="management-field">
                     <label for="cota-patrocinio">Cota</label>
                     <input class="management-input" id="cota-patrocinio" name="cota" maxlength="80" required placeholder="Ouro, prata, apoio...">
                 </div>
                 <div class="management-field">
-                    <label for="valor-patrocinio">Valor acordado (R$)</label>
-                    <input class="management-input" id="valor-patrocinio" name="valor" inputmode="decimal" required placeholder="5000,00">
+                    <label for="valor-patrocinio">Valor acordado (R$) <span class="management-muted">(somente apoio financeiro)</span></label>
+                    <input class="management-input" id="valor-patrocinio" name="valor" inputmode="decimal" placeholder="5000,00">
+                </div>
+                <div class="management-field management-field--full">
+                    <label for="descricao-patrocinio">Recurso oferecido <span class="management-muted">(obrigatório para apoio material ou institucional)</span></label>
+                    <input class="management-input" id="descricao-patrocinio" name="descricao_apoio" maxlength="500" placeholder="Ex.: 200 camisetas, divulgação institucional, empréstimo de equipamentos">
                 </div>
                 <div class="management-field management-field--full">
                     <label for="contrapartida-patrocinio">Contrapartida <span class="management-muted">(opcional)</span></label>
                     <input class="management-input" id="contrapartida-patrocinio" name="contrapartida" maxlength="500" placeholder="Divulgação, estande, materiais...">
                 </div>
             </div>
-            <p class="management-muted">O patrocínio começa em negociação. Confirme-o para habilitar o registro de pagamentos.</p>
+            <p class="management-muted">O patrocínio começa em negociação. Apoio financeiro exige valor positivo e, depois de confirmado, aceita pagamentos até o valor acordado. Apoios material e institucional exigem a descrição do recurso e não têm valor monetário.</p>
             <div class="management-actions management-actions--spaced">
                 <button class="management-button" type="submit">Registrar patrocínio</button>
             </div>
@@ -201,7 +218,7 @@ renderManagementStart(
         <?php else: ?>
             <div class="management-table-wrap">
                 <table class="management-table">
-                    <thead><tr><th>Parceiro</th><th>Cota e valor</th><th>Contrapartida</th><th>Status</th><th>Ação</th></tr></thead>
+                    <thead><tr><th>Parceiro</th><th>Apoio</th><th>Contrapartida</th><th>Status</th><th>Ação</th></tr></thead>
                     <tbody>
                         <?php foreach ($patrocinios as $patrocinio):
                             $rotulosStatus = ['negociacao' => 'Em negociação', 'confirmado' => 'Confirmado', 'cancelado' => 'Cancelado'];
@@ -209,7 +226,7 @@ renderManagementStart(
                         ?>
                             <tr>
                                 <td data-label="Parceiro"><strong><?= h($patrocinio['parceiro_nome']) ?></strong><?= $patrocinio['parceiro_email'] ? '<br>' . h($patrocinio['parceiro_email']) : '' ?></td>
-                                <td data-label="Cota e valor"><?= h($patrocinio['cota']) ?><br><?= h(financeiroMoeda($patrocinio['valor'])) ?></td>
+                                <td data-label="Apoio"><strong><?= h(TIPOS_APOIO[$patrocinio['tipo_apoio']] ?? $patrocinio['tipo_apoio']) ?></strong> · <?= h($patrocinio['cota']) ?><br><?= $patrocinio['tipo_apoio'] === 'financeiro' ? h(financeiroMoeda($patrocinio['valor'])) : h($patrocinio['descricao_apoio'] ?? '') ?></td>
                                 <td data-label="Contrapartida"><?= h($patrocinio['contrapartida'] ?: 'Não informada') ?></td>
                                 <td data-label="Status"><span class="management-badge <?= h($classeStatus[$patrocinio['status']] ?? '') ?>"><?= h($rotulosStatus[$patrocinio['status']]) ?></span></td>
                                 <td data-label="Ação">

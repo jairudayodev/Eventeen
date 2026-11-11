@@ -1,30 +1,60 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/../includes/gestao.php';
+require_once __DIR__ . '/../includes/usuarios.php';
+
 $usuario = requireRole('administrador');
-renderManagementStart($usuario, 'Administração de usuários', 'Consulte os usuários e seus perfis de acesso à plataforma.', 'usuarios');
+$termoRecebido = $_GET['q'] ?? '';
+$termo = is_string($termoRecebido) ? trim($termoRecebido) : '';
+$perfilRecebido = $_GET['perfil'] ?? '';
+$perfilFiltro = is_string($perfilRecebido) && isset(PERFIS_USUARIO[$perfilRecebido]) ? $perfilRecebido : '';
+
+$totais = contarUsuariosPorPerfil($pdo);
+$usuarios = listarUsuarios($pdo, $termo, $perfilFiltro);
+$mensagem = ($_GET['resultado'] ?? '') === 'salvo' ? 'Usuário atualizado com sucesso.' : null;
+
+renderManagementStart($usuario, 'Administração de usuários', 'Consulte os usuários, atualize seus dados e gerencie os perfis de acesso.', 'usuarios');
 ?>
 <section class="management-kpis" aria-label="Resumo de usuários">
-    <?php managementKpi('1.248', 'Total de usuários', '♙'); ?>
-    <?php managementKpi('1.221', 'Participantes', '◎'); ?>
-    <?php managementKpi('18', 'Organizadores', '▦'); ?>
-    <?php managementKpi('9', 'A revisar', '◷', 'draft'); ?>
+    <?php managementKpi((string) $totais['total'], 'Total de usuários', '♙'); ?>
+    <?php managementKpi((string) $totais['participante'], 'Participantes', '◎'); ?>
+    <?php managementKpi((string) $totais['organizador'], 'Organizadores', '▦'); ?>
+    <?php managementKpi((string) $totais['administrador'], 'Administradores', '★'); ?>
 </section>
-<div class="management-toolbar">
-    <input class="management-search" type="search" placeholder="Buscar por nome ou e-mail" aria-label="Buscar usuários" disabled>
+<?php if ($mensagem !== null): ?>
+    <p class="management-notice" role="status"><?= h($mensagem) ?></p>
+<?php endif; ?>
+<form class="management-toolbar" method="get" action="usuarios.php">
+    <input class="management-search" type="search" name="q" value="<?= h($termo) ?>" placeholder="Buscar por nome, e-mail ou matrícula" aria-label="Buscar usuários">
     <div class="management-actions">
-        <select class="management-select" aria-label="Filtrar por perfil" disabled><option>Todos os perfis</option></select>
-        <button class="management-button" type="button" disabled>＋ Novo usuário</button>
+        <select class="management-select" name="perfil" aria-label="Filtrar por perfil">
+            <option value="">Todos os perfis</option>
+            <?php foreach (PERFIS_USUARIO as $valor => $rotulo): ?>
+                <option value="<?= h($valor) ?>"<?= $perfilFiltro === $valor ? ' selected' : '' ?>><?= h($rotulo) ?></option>
+            <?php endforeach; ?>
+        </select>
+        <button class="management-button management-button--secondary" type="submit">Filtrar</button>
     </div>
-</div>
+</form>
 <div class="management-table-wrap">
     <table class="management-table">
-        <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Cadastro</th><th>Status</th><th>Ações</th></tr></thead>
+        <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Cadastro</th><th>Vínculos</th><th>Ações</th></tr></thead>
         <tbody>
-            <tr><td data-label="Nome"><strong>Camila Rocha</strong></td><td data-label="E-mail">camila@example.com</td><td data-label="Perfil">Participante</td><td data-label="Cadastro">20 out 2026</td><td data-label="Status"><span class="management-badge">Ativa</span></td><td data-label="Ações"><button class="management-button management-button--secondary" type="button" disabled>Gerenciar</button></td></tr>
-            <tr><td data-label="Nome"><strong>Diego Martins</strong></td><td data-label="E-mail">diego@example.com</td><td data-label="Perfil">Organizador</td><td data-label="Cadastro">18 out 2026</td><td data-label="Status"><span class="management-badge">Ativa</span></td><td data-label="Ações"><button class="management-button management-button--secondary" type="button" disabled>Gerenciar</button></td></tr>
-            <tr><td data-label="Nome"><strong>Joana Ferreira</strong></td><td data-label="E-mail">joana@example.com</td><td data-label="Perfil">Participante</td><td data-label="Cadastro">17 out 2026</td><td data-label="Status"><span class="management-badge management-badge--draft">A revisar</span></td><td data-label="Ações"><button class="management-button management-button--secondary" type="button" disabled>Gerenciar</button></td></tr>
-            <tr><td data-label="Nome"><strong>Rafael Lima</strong></td><td data-label="E-mail">rafael@example.com</td><td data-label="Perfil">Administrador</td><td data-label="Cadastro">12 out 2026</td><td data-label="Status"><span class="management-badge">Ativa</span></td><td data-label="Ações"><button class="management-button management-button--secondary" type="button" disabled>Gerenciar</button></td></tr>
+            <?php if (!$usuarios): ?>
+                <tr><td colspan="6">Nenhum usuário encontrado para os filtros informados.</td></tr>
+            <?php endif; ?>
+            <?php foreach ($usuarios as $conta):
+                $classePerfil = ['participante' => 'management-badge--muted', 'administrador' => 'management-badge--red'][$conta['perfil']] ?? '';
+            ?>
+                <tr>
+                    <td data-label="Nome"><strong><?= h($conta['nome']) ?></strong><?= $conta['matricula'] ? '<br><span class="management-muted">Matrícula ' . h($conta['matricula']) . '</span>' : '' ?></td>
+                    <td data-label="E-mail"><?= h($conta['email']) ?></td>
+                    <td data-label="Perfil"><span class="management-badge <?= h($classePerfil) ?>"><?= h(rotuloPerfil($conta['perfil'])) ?></span></td>
+                    <td data-label="Cadastro"><?= h(date('d/m/Y', strtotime((string) $conta['criado_em']))) ?></td>
+                    <td data-label="Vínculos"><?= (int) $conta['inscricoes_ativas'] ?> inscrição(ões) · <?= (int) $conta['eventos_organizados'] ?> evento(s) organizados</td>
+                    <td data-label="Ações"><a class="management-button management-button--secondary" href="usuario-form.php?id=<?= (int) $conta['id'] ?>">Gerenciar</a></td>
+                </tr>
+            <?php endforeach; ?>
         </tbody>
     </table>
 </div>

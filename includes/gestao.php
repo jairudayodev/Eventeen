@@ -2,7 +2,7 @@
 declare(strict_types=1);
 require_once dirname(__DIR__) . '/config.php';
 
-function renderManagementStart(array $usuario, string $titulo, string $descricao, string $paginaAtiva, bool $previsualizacao = true): void
+function renderManagementStart(array $usuario, string $titulo, string $descricao, string $paginaAtiva, bool $previsualizacao = false): void
 {
     $perfil = (string) ($usuario['perfil'] ?? 'organizador');
     $isAdmin = $perfil === 'administrador';
@@ -71,7 +71,6 @@ function renderManagementStart(array $usuario, string $titulo, string $descricao
                     <?php if ($previsualizacao): ?><span class="management-preview">Prévia de interface</span><?php endif; ?>
                 </header>
                 <div class="management-page-content">
-                    <?php if ($previsualizacao): ?><p class="management-notice" role="note">Dados ilustrativos para demonstração. As ações destas telas de gestão ainda não estão conectadas ao banco de dados.</p><?php endif; ?>
     <?php
 }
 
@@ -87,7 +86,7 @@ function renderManagementEnd(array $usuario): void
         'eventos.php', 'evento-form.php' => 'Eventos',
         'presencas.php' => 'Presenças',
         'mais.php', 'atividades.php', 'palestrantes.php', 'espacos.php', 'relatorios.php', 'parceiros.php', 'financeiro.php' => 'Mais',
-        'usuarios.php' => 'Usuários',
+        'usuarios.php', 'usuario-form.php' => 'Usuários',
         default => '',
     };
     ?>

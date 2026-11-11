@@ -88,6 +88,16 @@ function salvarParceiro(PDO $pdo, int $usuarioId, string $nome, string $email, s
     return (int) $pdo->lastInsertId();
 }
 
+const TIPOS_APOIO = [
+    'financeiro' => 'Financeiro',
+    'material' => 'Material',
+    'institucional' => 'Institucional',
+];
+
+/**
+ * Registra um patrocínio (RF18, RN13). Apoio financeiro exige valor positivo;
+ * apoios material e institucional exigem a descrição do recurso e não têm valor monetário.
+ */
 function salvarPatrocinio(
     PDO $pdo,
     int $eventoId,
@@ -95,15 +105,33 @@ function salvarPatrocinio(
     int $parceiroId,
     string $cota,
     string $contrapartida,
-    int $valorCentavos
+    int $valorCentavos,
+    string $tipoApoio = 'financeiro',
+    string $descricaoApoio = ''
 ): int {
     $cota = trim($cota);
     $contrapartida = trim($contrapartida);
-    if ($cota === '' || mb_strlen($cota, 'UTF-8') > 80 || mb_strlen($contrapartida, 'UTF-8') > 500) {
+    $descricaoApoio = trim($descricaoApoio);
+    if (!isset(TIPOS_APOIO[$tipoApoio])) {
+        throw new DomainException('Selecione um tipo de apoio válido.');
+    }
+    if (
+        $cota === '' || mb_strlen($cota, 'UTF-8') > 80
+        || mb_strlen($contrapartida, 'UTF-8') > 500
+        || mb_strlen($descricaoApoio, 'UTF-8') > 500
+    ) {
         throw new DomainException('Informe a cota e respeite os limites dos campos.');
     }
-    if ($valorCentavos < 1) {
+    if ($tipoApoio === 'financeiro' && $valorCentavos < 1) {
         throw new DomainException('O valor do patrocínio deve ser maior que zero.');
+    }
+    if ($tipoApoio !== 'financeiro') {
+        if ($descricaoApoio === '') {
+            throw new DomainException('Descreva o recurso oferecido no apoio material ou institucional.');
+        }
+        if ($valorCentavos !== 0) {
+            throw new DomainException('Apoios material e institucional não possuem valor monetário.');
+        }
     }
 
     return programacaoTransacao($pdo, $eventoId, $usuarioId, static function () use (
@@ -113,7 +141,9 @@ function salvarPatrocinio(
         $parceiroId,
         $cota,
         $contrapartida,
-        $valorCentavos
+        $valorCentavos,
+        $tipoApoio,
+        $descricaoApoio
     ): int {
         $consulta = $pdo->prepare(
             'SELECT id FROM parceiros WHERE id = :parceiro_id AND criado_por = :usuario_id FOR UPDATE'
@@ -123,15 +153,17 @@ function salvarPatrocinio(
             throw new DomainException('Parceiro não encontrado na sua lista.');
         }
         $consulta = $pdo->prepare(
-            'INSERT INTO patrocinios (evento_id, parceiro_id, cota, contrapartida, valor)
-             VALUES (:evento_id, :parceiro_id, :cota, :contrapartida, :valor)'
+            'INSERT INTO patrocinios (evento_id, parceiro_id, tipo_apoio, cota, descricao_apoio, contrapartida, valor)
+             VALUES (:evento_id, :parceiro_id, :tipo_apoio, :cota, :descricao_apoio, :contrapartida, :valor)'
         );
         $consulta->execute([
             'evento_id' => $eventoId,
             'parceiro_id' => $parceiroId,
+            'tipo_apoio' => $tipoApoio,
             'cota' => $cota,
+            'descricao_apoio' => $descricaoApoio !== '' ? $descricaoApoio : null,
             'contrapartida' => $contrapartida !== '' ? $contrapartida : null,
-            'valor' => financeiroDecimal($valorCentavos),
+            'valor' => $tipoApoio === 'financeiro' ? financeiroDecimal($valorCentavos) : null,
         ]);
 
         return (int) $pdo->lastInsertId();
@@ -278,12 +310,13 @@ function salvarLancamentoFinanceiro(
                  WHERE p.id = :patrocinio_id
                    AND eo.usuario_id = :usuario_id
                    AND p.status = 'confirmado'
+                   AND p.tipo_apoio = 'financeiro'
                  FOR UPDATE"
             );
             $consulta->execute(['patrocinio_id' => $patrocinioId, 'usuario_id' => $usuarioId]);
             $patrocinio = $consulta->fetch();
             if (!$patrocinio || (int) $patrocinio['evento_id'] !== $eventoId) {
-                throw new DomainException('O patrocínio deve estar confirmado e pertencer ao evento selecionado.');
+                throw new DomainException('O patrocínio deve ser financeiro, estar confirmado e pertencer ao evento selecionado.');
             }
             $consulta = $pdo->prepare(
                 "SELECT COALESCE(SUM(valor), 0)
@@ -391,7 +424,21 @@ function resumoFinanceiroEvento(PDO $pdo, int $eventoId): array
     );
     $consulta->execute(['evento_id' => $eventoId]);
     $resumo = $consulta->fetch();
+
+    $consulta = $pdo->prepare(
+        "SELECT
+            COALESCE(SUM(CASE WHEN pg.status = 'confirmado' THEN pg.valor ELSE 0 END), 0) AS inscricoes_confirmadas,
+            COALESCE(SUM(CASE WHEN pg.status = 'pendente' THEN pg.valor ELSE 0 END), 0) AS inscricoes_pendentes
+         FROM pagamentos_inscricoes pg
+         JOIN inscricoes i ON i.id = pg.inscricao_id
+         WHERE i.evento_id = :evento_id"
+    );
+    $consulta->execute(['evento_id' => $eventoId]);
+    $resumo += $consulta->fetch();
+
+    // Saldo: entradas realizadas + pagamentos de inscrição confirmados - despesas pagas (rateadas).
     $resumo['saldo_centavos'] = financeiroCentavos((string) $resumo['entradas'], true)
+        + financeiroCentavos((string) $resumo['inscricoes_confirmadas'], true)
         - financeiroCentavos((string) $resumo['despesas'], true);
 
     return $resumo;
@@ -412,6 +459,207 @@ function listarLancamentosEvento(PDO $pdo, int $eventoId): array
          LEFT JOIN parceiros p ON p.id = pa.parceiro_id
          WHERE fr.evento_id = :evento_id
          ORDER BY l.data_movimentacao DESC, l.id DESC'
+    );
+    $consulta->execute(['evento_id' => $eventoId]);
+
+    return $consulta->fetchAll();
+}
+
+/* ------------------------------------------------------------------
+ * Pagamentos de inscrição (RF19, RN12). O sistema apenas registra as
+ * operações informadas pela organização; não há cobrança on-line.
+ * ------------------------------------------------------------------ */
+
+const FORMAS_PAGAMENTO = [
+    'pix' => 'Pix',
+    'dinheiro' => 'Dinheiro',
+    'cartao' => 'Cartão',
+    'transferencia' => 'Transferência',
+    'boleto' => 'Boleto',
+];
+
+const PRAZO_ESTORNO_DIAS = 7;
+
+function financeiroDataValida(string $data, string $mensagem): DateTimeImmutable
+{
+    $valor = DateTimeImmutable::createFromFormat('!Y-m-d', $data);
+    $erros = DateTimeImmutable::getLastErrors();
+    if (
+        !$valor
+        || ($erros !== false && ($erros['warning_count'] > 0 || $erros['error_count'] > 0))
+        || $valor->format('Y-m-d') !== $data
+    ) {
+        throw new DomainException($mensagem);
+    }
+    if ($valor > new DateTimeImmutable('today')) {
+        throw new DomainException('A data informada não pode estar no futuro.');
+    }
+
+    return $valor;
+}
+
+/**
+ * Bloqueia a inscrição e confirma que o organizador está vinculado ao evento dela.
+ */
+function financeiroInscricaoDoOrganizador(PDO $pdo, int $inscricaoId, int $organizadorId): array
+{
+    $consulta = $pdo->prepare(
+        'SELECT i.id, i.status, i.evento_id, e.valor_inscricao
+         FROM inscricoes i
+         JOIN eventos e ON e.id = i.evento_id
+         WHERE i.id = :inscricao_id
+           AND EXISTS (
+               SELECT 1 FROM evento_organizadores eo
+               WHERE eo.evento_id = i.evento_id AND eo.usuario_id = :organizador_id
+           )
+         FOR UPDATE'
+    );
+    $consulta->execute(['inscricao_id' => $inscricaoId, 'organizador_id' => $organizadorId]);
+    $inscricao = $consulta->fetch();
+    if (!$inscricao) {
+        throw new DomainException('Inscrição não encontrada ou você não tem permissão sobre este evento.');
+    }
+
+    return $inscricao;
+}
+
+function registrarPagamentoInscricao(
+    PDO $pdo,
+    int $organizadorId,
+    int $inscricaoId,
+    int $valorCentavos,
+    string $forma,
+    string $status,
+    ?string $dataPagamento
+): int {
+    if (!isset(FORMAS_PAGAMENTO[$forma])) {
+        throw new DomainException('Selecione uma forma de pagamento válida.');
+    }
+    if (!in_array($status, ['pendente', 'confirmado'], true)) {
+        throw new DomainException('Um novo pagamento deve ser registrado como pendente ou confirmado.');
+    }
+    if ($valorCentavos < 1) {
+        throw new DomainException('O valor do pagamento deve ser maior que zero.');
+    }
+    if ($status === 'confirmado') {
+        if ($dataPagamento === null || $dataPagamento === '') {
+            throw new DomainException('Informe a data do pagamento confirmado.');
+        }
+        financeiroDataValida($dataPagamento, 'Informe uma data de pagamento válida.');
+    } else {
+        $dataPagamento = null;
+    }
+
+    $pdo->beginTransaction();
+    try {
+        $inscricao = financeiroInscricaoDoOrganizador($pdo, $inscricaoId, $organizadorId);
+        if ($inscricao['status'] !== 'ativa') {
+            throw new DomainException('Somente inscrições Confirmadas podem receber pagamento.');
+        }
+        if ((float) $inscricao['valor_inscricao'] <= 0) {
+            throw new DomainException('Este evento é gratuito e não recebe pagamentos de inscrição.');
+        }
+        $consulta = $pdo->prepare('SELECT id FROM pagamentos_inscricoes WHERE inscricao_id = :inscricao_id');
+        $consulta->execute(['inscricao_id' => $inscricaoId]);
+        if ($consulta->fetchColumn() !== false) {
+            throw new DomainException('Esta inscrição já possui um pagamento registrado.');
+        }
+        $consulta = $pdo->prepare(
+            'INSERT INTO pagamentos_inscricoes
+                (inscricao_id, registrado_por, valor, forma_pagamento, status, data_pagamento)
+             VALUES (:inscricao_id, :registrado_por, :valor, :forma, :status, :data_pagamento)'
+        );
+        $consulta->execute([
+            'inscricao_id' => $inscricaoId,
+            'registrado_por' => $organizadorId,
+            'valor' => financeiroDecimal($valorCentavos),
+            'forma' => $forma,
+            'status' => $status,
+            'data_pagamento' => $dataPagamento,
+        ]);
+        $pagamentoId = (int) $pdo->lastInsertId();
+        $pdo->commit();
+
+        return $pagamentoId;
+    } catch (Throwable $exception) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $exception;
+    }
+}
+
+/**
+ * Confirma um pagamento pendente ou estorna um pagamento confirmado.
+ * O estorno deve ser registrado em até 7 dias após a data do pagamento.
+ */
+function atualizarPagamentoInscricao(PDO $pdo, int $organizadorId, int $pagamentoId, string $acao, string $data): void
+{
+    if (!in_array($acao, ['confirmar', 'estornar'], true)) {
+        throw new DomainException('A ação do pagamento é inválida.');
+    }
+    $dataOperacao = financeiroDataValida($data, 'Informe uma data válida para a operação.');
+
+    $pdo->beginTransaction();
+    try {
+        $consulta = $pdo->prepare('SELECT inscricao_id FROM pagamentos_inscricoes WHERE id = :id');
+        $consulta->execute(['id' => $pagamentoId]);
+        $inscricaoId = $consulta->fetchColumn();
+        if ($inscricaoId === false) {
+            throw new DomainException('Pagamento não encontrado.');
+        }
+        financeiroInscricaoDoOrganizador($pdo, (int) $inscricaoId, $organizadorId);
+
+        $consulta = $pdo->prepare(
+            'SELECT status, data_pagamento FROM pagamentos_inscricoes WHERE id = :id FOR UPDATE'
+        );
+        $consulta->execute(['id' => $pagamentoId]);
+        $pagamento = $consulta->fetch();
+
+        if ($acao === 'confirmar') {
+            if ($pagamento['status'] !== 'pendente') {
+                throw new DomainException('Somente pagamentos pendentes podem ser confirmados.');
+            }
+            $consulta = $pdo->prepare(
+                "UPDATE pagamentos_inscricoes SET status = 'confirmado', data_pagamento = :data WHERE id = :id"
+            );
+        } else {
+            if ($pagamento['status'] !== 'confirmado') {
+                throw new DomainException('Somente pagamentos confirmados podem ser estornados.');
+            }
+            $dataPagamento = new DateTimeImmutable((string) $pagamento['data_pagamento']);
+            if ($dataOperacao < $dataPagamento) {
+                throw new DomainException('A data do estorno não pode ser anterior à data do pagamento.');
+            }
+            if ($dataOperacao > $dataPagamento->modify('+' . PRAZO_ESTORNO_DIAS . ' days')) {
+                throw new DomainException('O prazo de ' . PRAZO_ESTORNO_DIAS . ' dias para estorno após o pagamento foi encerrado.');
+            }
+            $consulta = $pdo->prepare(
+                "UPDATE pagamentos_inscricoes SET status = 'estornado', data_estorno = :data WHERE id = :id"
+            );
+        }
+        $consulta->execute(['data' => $dataOperacao->format('Y-m-d'), 'id' => $pagamentoId]);
+        $pdo->commit();
+    } catch (Throwable $exception) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $exception;
+    }
+}
+
+function listarPagamentosInscricoesEvento(PDO $pdo, int $eventoId): array
+{
+    $consulta = $pdo->prepare(
+        "SELECT i.id AS inscricao_id, i.status AS inscricao_status, u.nome, u.email,
+                pg.id AS pagamento_id, pg.valor, pg.forma_pagamento, pg.status AS pagamento_status,
+                pg.data_pagamento, pg.data_estorno
+         FROM inscricoes i
+         JOIN usuarios u ON u.id = i.usuario_id
+         LEFT JOIN pagamentos_inscricoes pg ON pg.inscricao_id = i.id
+         WHERE i.evento_id = :evento_id
+           AND (i.status = 'ativa' OR pg.id IS NOT NULL)
+         ORDER BY u.nome, i.id"
     );
     $consulta->execute(['evento_id' => $eventoId]);
 

@@ -45,10 +45,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-<!-- Vitor; Edu esteve aqui -->
- <!-- Gustavinho do grau esteve aq -->
-<!-- Jair Bolsonaro esteve aq -->
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>

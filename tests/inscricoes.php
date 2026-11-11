@@ -54,13 +54,13 @@ $criarUsuario = static function () use ($pdo, &$usuariosDeTeste): int {
     return $id;
 };
 
-$criarEvento = static function (string $titulo, ?int $capacidade, bool $iniciado = false) use ($pdo, &$eventosDeTeste): int {
-    $inicio = $iniciado ? 'DATE_SUB(NOW(), INTERVAL 1 MINUTE)' : 'DATE_ADD(NOW(), INTERVAL 1 DAY)';
+$criarEvento = static function (string $titulo, ?int $capacidade, bool $iniciado = false, string $inicioSql = '') use ($pdo, &$eventosDeTeste): int {
+    $inicio = $inicioSql !== '' ? $inicioSql : ($iniciado ? 'DATE_SUB(NOW(), INTERVAL 1 MINUTE)' : 'DATE_ADD(NOW(), INTERVAL 2 DAY)');
     $consulta = $pdo->prepare(
         "INSERT INTO eventos
             (titulo, descricao, categoria, local, data_inicio, data_fim, capacidade, status)
          VALUES (:titulo, 'Evento de teste', 'Teste', 'Local de teste',
-                 {$inicio}, DATE_ADD(NOW(), INTERVAL 2 DAY), :capacidade, 'publicado')"
+                 {$inicio}, DATE_ADD(NOW(), INTERVAL 3 DAY), :capacidade, 'publicado')"
     );
     $consulta->execute(['titulo' => $titulo, 'capacidade' => $capacidade]);
     $id = (int) $pdo->lastInsertId();
@@ -128,6 +128,40 @@ try {
     $assert(
         !cancelarInscricao($pdo, $usuarioLotado, $inscricaoId),
         'Uma inscrição de evento iniciado foi cancelada.'
+    );
+
+    // RN11: cancelamento somente até 24 horas antes do início.
+    $usuarioVespera = $criarUsuario();
+    $eventoVespera = $criarEvento('Teste de antecedência ' . bin2hex(random_bytes(4)), 5, false, 'DATE_ADD(NOW(), INTERVAL 12 HOUR)');
+    inscreverParticipante($pdo, $usuarioVespera, $eventoVespera);
+    $consulta = $pdo->prepare('SELECT id FROM inscricoes WHERE usuario_id = :usuario_id AND evento_id = :evento_id');
+    $consulta->execute(['usuario_id' => $usuarioVespera, 'evento_id' => $eventoVespera]);
+    $assert(
+        !cancelarInscricao($pdo, $usuarioVespera, (int) $consulta->fetchColumn()),
+        'Uma inscrição foi cancelada com menos de 24 horas para o início do evento.'
+    );
+
+    // RN11: inscrição com presença registrada não pode ser cancelada.
+    $usuarioPresente = $criarUsuario();
+    $eventoPresenca = $criarEvento('Teste de presença no cancelamento ' . bin2hex(random_bytes(4)), 5);
+    inscreverParticipante($pdo, $usuarioPresente, $eventoPresenca);
+    $pdo->prepare("INSERT INTO espacos (evento_id, nome, capacidade) VALUES (:evento_id, 'Sala', 5)")
+        ->execute(['evento_id' => $eventoPresenca]);
+    $espacoPresenca = (int) $pdo->lastInsertId();
+    $pdo->prepare(
+        "INSERT INTO atividades (evento_id, espaco_id, titulo, tipo, inicio, fim, capacidade)
+         VALUES (:evento_id, :espaco_id, 'Atividade', 'Palestra',
+                 DATE_ADD(NOW(), INTERVAL 2 DAY), DATE_ADD(NOW(), INTERVAL 50 HOUR), 5)"
+    )->execute(['evento_id' => $eventoPresenca, 'espaco_id' => $espacoPresenca]);
+    $atividadePresenca = (int) $pdo->lastInsertId();
+    $pdo->prepare(
+        'INSERT INTO presencas_atividades (atividade_id, evento_id, usuario_id) VALUES (:atividade_id, :evento_id, :usuario_id)'
+    )->execute(['atividade_id' => $atividadePresenca, 'evento_id' => $eventoPresenca, 'usuario_id' => $usuarioPresente]);
+    $consulta = $pdo->prepare('SELECT id FROM inscricoes WHERE usuario_id = :usuario_id AND evento_id = :evento_id');
+    $consulta->execute(['usuario_id' => $usuarioPresente, 'evento_id' => $eventoPresenca]);
+    $assert(
+        !cancelarInscricao($pdo, $usuarioPresente, (int) $consulta->fetchColumn()),
+        'Uma inscrição com presença registrada foi cancelada.'
     );
 
     $eventoConcorrente = $criarEvento('Teste concorrente ' . bin2hex(random_bytes(4)), 2);

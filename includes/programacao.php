@@ -191,6 +191,22 @@ function excluirPalestrante(PDO $pdo, int $eventoId, int $usuarioId, int $palest
             throw new DomainException('Palestrante não encontrado neste evento.');
         }
         $consulta = $pdo->prepare(
+            'SELECT a.titulo
+             FROM atividade_palestrantes ap
+             JOIN atividades a ON a.id = ap.atividade_id
+             WHERE ap.palestrante_id = :palestrante_id
+               AND (SELECT COUNT(*) FROM atividade_palestrantes outro WHERE outro.atividade_id = ap.atividade_id) = 1
+             LIMIT 1'
+        );
+        $consulta->execute(['palestrante_id' => $palestranteId]);
+        $atividadeUnica = $consulta->fetchColumn();
+        if ($atividadeUnica !== false) {
+            throw new DomainException(
+                'Este é o único palestrante da atividade "' . $atividadeUnica
+                . '". Inclua outro palestrante na atividade antes de excluí-lo.'
+            );
+        }
+        $consulta = $pdo->prepare(
             'DELETE FROM palestrantes WHERE id = :id AND evento_id = :evento_id'
         );
         $consulta->execute(['id' => $palestranteId, 'evento_id' => $eventoId]);
@@ -367,6 +383,9 @@ function salvarAtividade(
                 throw new DomainException('Selecione somente palestrantes cadastrados neste evento.');
             }
         }
+        if ($palestrantesIds === []) {
+            throw new DomainException('Selecione ao menos um palestrante para a atividade.');
+        }
 
         $parametrosConflito = [
             'evento_id' => $eventoId,
@@ -463,6 +482,11 @@ function excluirAtividade(PDO $pdo, int $eventoId, int $usuarioId, int $atividad
         $eventoId,
         $atividadeId
     ): void {
+        $consulta = $pdo->prepare('SELECT COUNT(*) FROM certificados WHERE atividade_id = :id');
+        $consulta->execute(['id' => $atividadeId]);
+        if ((int) $consulta->fetchColumn() > 0) {
+            throw new DomainException('Esta atividade possui certificados emitidos e não pode ser excluída.');
+        }
         $consulta = $pdo->prepare('DELETE FROM atividades WHERE id = :id AND evento_id = :evento_id');
         $consulta->execute(['id' => $atividadeId, 'evento_id' => $eventoId]);
         if ($consulta->rowCount() === 0) {

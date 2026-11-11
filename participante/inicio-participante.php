@@ -14,17 +14,15 @@ $consulta->execute(['usuario_id' => $userId]);
 $inscricoesAtivas = (int) $consulta->fetchColumn();
 
 $consulta = $pdo->prepare(
-    "SELECT COUNT(*) FROM inscricoes
-     WHERE usuario_id = :usuario_id AND status = 'ativa' AND presenca_confirmada = 1"
+    "SELECT COUNT(DISTINCT pa.evento_id)
+     FROM presencas_atividades pa
+     JOIN inscricoes i ON i.usuario_id = pa.usuario_id AND i.evento_id = pa.evento_id
+     WHERE pa.usuario_id = :usuario_id AND i.status = 'ativa'"
 );
 $consulta->execute(['usuario_id' => $userId]);
 $participacoes = (int) $consulta->fetchColumn();
 
-$consulta = $pdo->prepare(
-    "SELECT COUNT(*) FROM inscricoes
-     WHERE usuario_id = :usuario_id AND status = 'ativa'
-       AND presenca_confirmada = 1 AND certificado_url IS NOT NULL"
-);
+$consulta = $pdo->prepare('SELECT COUNT(*) FROM certificados WHERE usuario_id = :usuario_id');
 $consulta->execute(['usuario_id' => $userId]);
 $certificados = (int) $consulta->fetchColumn();
 

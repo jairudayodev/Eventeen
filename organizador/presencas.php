@@ -147,7 +147,35 @@ renderManagementStart(
 
     <?php if ($eventoAtual !== null): ?>
         <?php if (!$atividades): ?>
-            <p class="management-notice">Este evento ainda não possui atividades cadastradas.</p>
+            <?php
+            $consultaInscritos = $pdo->prepare(
+                "SELECT u.nome, u.email, i.status, i.inscrito_em
+                 FROM inscricoes i JOIN usuarios u ON u.id = i.usuario_id
+                 WHERE i.evento_id = :evento_id
+                 ORDER BY i.status, u.nome"
+            );
+            $consultaInscritos->execute(['evento_id' => $eventoId]);
+            $inscritosEvento = $consultaInscritos->fetchAll();
+            ?>
+            <p class="management-notice">Este evento ainda não possui atividades cadastradas. Cadastre a <a href="atividades.php?evento_id=<?= (int) $eventoId ?>">programação</a> para registrar presenças.</p>
+            <div class="management-table-wrap">
+                <table class="management-table">
+                    <thead><tr><th>Participante</th><th>E-mail</th><th>Inscrição</th><th>Data da inscrição</th></tr></thead>
+                    <tbody>
+                        <?php if (!$inscritosEvento): ?>
+                            <tr><td colspan="4">Nenhuma inscrição neste evento.</td></tr>
+                        <?php endif; ?>
+                        <?php foreach ($inscritosEvento as $inscrito): ?>
+                            <tr>
+                                <td data-label="Participante"><strong><?= h($inscrito['nome']) ?></strong></td>
+                                <td data-label="E-mail"><?= h($inscrito['email']) ?></td>
+                                <td data-label="Inscrição"><span class="management-badge<?= $inscrito['status'] === 'ativa' ? '' : ' management-badge--muted' ?>"><?= $inscrito['status'] === 'ativa' ? 'Confirmada' : 'Cancelada' ?></span></td>
+                                <td data-label="Data da inscrição"><?= h(date('d/m/Y H:i', strtotime((string) $inscrito['inscrito_em']))) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         <?php else: ?>
             <form class="management-toolbar" method="get" action="presencas.php">
                 <input type="hidden" name="evento_id" value="<?= $eventoId ?>">

@@ -16,7 +16,7 @@
 | Integrantes | Carlos Eduardo Barros · Gabriel Arcangelo de Oliveira · Gustavo Rios Pereira · Jair Roger Pereira da Silva · Vitor Corrêa Silva Fantineli |
 | Papéis Scrum (PO, SM, Developers) | \[A DEFINIR PELA EQUIPE\] |
 | Quantidade e duração das Sprints | \[A DEFINIR PELA EQUIPE\] — o TEMPLATE usa "oito Sprints de duas semanas" apenas como exemplo |
-| Stack tecnológica | \[A DEFINIR PELA EQUIPE\] — ver seção 10 |
+| Stack tecnológica | PHP 8 sem framework, MySQL/MariaDB (XAMPP), HTML e CSS — ver seção 10 |
 
 ---
 
@@ -231,10 +231,10 @@ Regras:
 
 | Item | Definição |
 | :---- | :---- |
-| Linguagem / framework back-end | \[A DEFINIR PELA EQUIPE\] |
-| Front-end | \[A DEFINIR PELA EQUIPE\] |
-| Banco de dados relacional | \[A DEFINIR PELA EQUIPE\] |
-| Controle de versão / repositório | \[A DEFINIR PELA EQUIPE\] |
+| Linguagem / framework back-end | PHP 8.1+ sem framework (PDO MySQL, mbstring) |
+| Front-end | HTML e CSS responsivos (`css/style.css`, `css/gestao.css`) |
+| Banco de dados relacional | MySQL 8 ou MariaDB 10.6+ (`banco.sql`) |
+| Controle de versão / repositório | Git e GitHub (github.com/jairudayodev/Eventeen) |
 | Quadro de acompanhamento | \[A DEFINIR PELA EQUIPE\] |
 | Ferramenta de prototipação | \[A DEFINIR PELA EQUIPE\] (TEMPLATE cita Figma como exemplo) |
 | Ambiente de implantação | \[A DEFINIR PELA EQUIPE\] |
@@ -243,13 +243,13 @@ Não escolher stack por conta própria: sugerir opções apenas quando pedido e 
 
 ### 10.2 Comandos
 
-\# instalar:   \[A DEFINIR\]
+\# instalar:   copiar o projeto para C:\xampp\htdocs\Eventeen e iniciar Apache e MySQL
 
-\# executar:   \[A DEFINIR\]
+\# executar:   http://localhost/Eventeen/ (ou php -S 127.0.0.1:8000)
 
-\# testar:     \[A DEFINIR\]
+\# testar:     php tests/<arquivo>.php (8 arquivos em tests/)
 
-\# banco/migr: \[A DEFINIR\]
+\# banco/migr: importar banco.sql (idempotente; atualiza bancos anteriores)
 
 ### 10.3 Regras para o código
 
@@ -270,6 +270,11 @@ Não escolher stack por conta própria: sugerir opções apenas quando pedido e 
 | ID | Data | Decisão | Motivo / fonte | Afeta |
 | :---- | :---- | :---- | :---- | :---- |
 | D-01 | 2026-09-23 | Criado este CLAUDE.md como guia central do projeto | Solicitação do usuário | Todo o projeto |
+| D-02 | 2026-11-11 | Administrador é um perfil de acesso distinto (USUARIOS.perfil), dedicado a usuários e permissões | Implementação de RF03 | RN06, UC01, MR |
+| D-03 | 2026-11-11 | Atividades, espaços e palestrantes pertencem a um único evento (modelo físico V3) | Simplificação da implementação | RN10, MR, dicionário |
+| D-04 | 2026-11-11 | Cancelamento de inscrição até 24 h antes do início e sem presença registrada | RN11 / CA-RF08 | Inscrições |
+| D-05 | 2026-11-11 | Certificados em PDF por presença em atividade concluída, com código de validação público | RF17 | Certificados |
+| D-06 | 2026-11-11 | Pagamentos de inscrição registrados pelo organizador (um por inscrição, estorno em até 7 dias) e tipos de apoio financeiro/material/institucional | RF18, RF19, RN12, RN13 | Financeiro |
 |  |  |  |  |  |
 
 ---
@@ -300,4 +305,5 @@ Não escolher stack por conta própria: sugerir opções apenas quando pedido e 
 | Data | Alteração |
 | :---- | :---- |
 | 2026-09-23 | Versão inicial, a partir do TEMPLATE de ES II, do Documento de Visão v1.0 e do Estudo de Caso 1 – BD |
+| 2026-11-11 | Stack, comandos e decisões D-02 a D-06 registrados após a revisão do código e da Documentação do Desenvolvimento |
 

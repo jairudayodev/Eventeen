@@ -12,12 +12,12 @@ $consulta = $pdo->prepare(
     "SELECT i.id, e.titulo, e.data_inicio
      FROM inscricoes i JOIN eventos e ON e.id = i.evento_id
      WHERE i.id = :id AND i.usuario_id = :usuario_id
-       AND i.status = 'ativa' AND e.data_inicio > NOW()"
+       AND " . condicaoCancelamentoPermitido()
 );
 $consulta->execute(['id' => $inscricaoId, 'usuario_id' => (int) $usuario['id']]);
 $inscricao = $consulta->fetch();
 if (!$inscricao) {
-    header('Location: minhas-inscricoes.php');
+    header('Location: minhas-inscricoes.php?cancelamento=indisponivel');
     exit;
 }
 $erro = null;
