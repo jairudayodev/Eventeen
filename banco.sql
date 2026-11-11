@@ -134,6 +134,85 @@ CREATE TABLE IF NOT EXISTS atividade_palestrantes (
         FOREIGN KEY (palestrante_id, evento_id) REFERENCES palestrantes (id, evento_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS presencas_atividades (
+    atividade_id BIGINT UNSIGNED NOT NULL,
+    evento_id BIGINT UNSIGNED NOT NULL,
+    usuario_id BIGINT UNSIGNED NOT NULL,
+    confirmado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (atividade_id, usuario_id),
+    KEY idx_presencas_atividades_usuario_evento (usuario_id, evento_id, confirmado_em),
+    CONSTRAINT fk_presencas_atividades_atividade
+        FOREIGN KEY (atividade_id, evento_id) REFERENCES atividades (id, evento_id) ON DELETE CASCADE,
+    CONSTRAINT fk_presencas_atividades_inscricao
+        FOREIGN KEY (usuario_id, evento_id) REFERENCES inscricoes (usuario_id, evento_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS parceiros (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    criado_por BIGINT UNSIGNED NOT NULL,
+    nome VARCHAR(150) NOT NULL,
+    email VARCHAR(190) NULL,
+    telefone VARCHAR(40) NULL,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_parceiros_criador_email (criado_por, email),
+    KEY idx_parceiros_criador_nome (criado_por, nome),
+    CONSTRAINT fk_parceiros_criador
+        FOREIGN KEY (criado_por) REFERENCES usuarios (id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS patrocinios (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    evento_id BIGINT UNSIGNED NOT NULL,
+    parceiro_id BIGINT UNSIGNED NOT NULL,
+    cota VARCHAR(80) NOT NULL,
+    contrapartida VARCHAR(500) NULL,
+    valor DECIMAL(12,2) NOT NULL,
+    status ENUM('negociacao', 'confirmado', 'cancelado') NOT NULL DEFAULT 'negociacao',
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_patrocinios_evento_status (evento_id, status),
+    KEY idx_patrocinios_parceiro (parceiro_id),
+    CONSTRAINT fk_patrocinios_evento
+        FOREIGN KEY (evento_id) REFERENCES eventos (id) ON DELETE CASCADE,
+    CONSTRAINT fk_patrocinios_parceiro
+        FOREIGN KEY (parceiro_id) REFERENCES parceiros (id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS financeiro_lancamentos (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    criado_por BIGINT UNSIGNED NOT NULL,
+    patrocinio_id BIGINT UNSIGNED NULL,
+    descricao VARCHAR(180) NOT NULL,
+    tipo ENUM('entrada', 'despesa') NOT NULL,
+    valor DECIMAL(12,2) NOT NULL,
+    data_movimentacao DATE NOT NULL,
+    status ENUM('pendente', 'realizado', 'cancelado') NOT NULL DEFAULT 'pendente',
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_financeiro_criador_status (criado_por, status),
+    KEY idx_financeiro_patrocinio (patrocinio_id),
+    CONSTRAINT fk_financeiro_criador
+        FOREIGN KEY (criado_por) REFERENCES usuarios (id) ON DELETE RESTRICT,
+    CONSTRAINT fk_financeiro_patrocinio
+        FOREIGN KEY (patrocinio_id) REFERENCES patrocinios (id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS financeiro_rateios (
+    lancamento_id BIGINT UNSIGNED NOT NULL,
+    evento_id BIGINT UNSIGNED NOT NULL,
+    valor DECIMAL(12,2) NOT NULL,
+    PRIMARY KEY (lancamento_id, evento_id),
+    KEY idx_financeiro_rateios_evento (evento_id),
+    CONSTRAINT fk_financeiro_rateios_lancamento
+        FOREIGN KEY (lancamento_id) REFERENCES financeiro_lancamentos (id) ON DELETE CASCADE,
+    CONSTRAINT fk_financeiro_rateios_evento
+        FOREIGN KEY (evento_id) REFERENCES eventos (id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
 INSERT INTO eventos
     (titulo, descricao, categoria, local, data_inicio, data_fim, capacidade, status)
 SELECT 'Conexões Inteligentes',
