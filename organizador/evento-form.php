@@ -310,7 +310,6 @@ renderManagementStart(
         <h2>Informações do evento</h2>
         <!--<span class="management-badge <?= h($statusClasses[$statusExibicao] ?? '') ?>"><?= h($statusRotulos[$statusExibicao] ?? $statusExibicao) ?></span>-->
     </div>
-    <?php renderRequiredFieldsNote(); ?>
     <div class="management-form-grid">
         <div class="management-field management-field--full">
             <label for="titulo-evento">Nome do evento <span class="campo-obrigatorio" aria-hidden="true">*</span></label>

@@ -3,6 +3,7 @@ declare(strict_types=1);
 require __DIR__ . '/../config.php';
 require __DIR__ . '/../includes/inscricoes.php';
 require_once __DIR__ . '/../includes/financeiro.php';
+require __DIR__ . '/../includes/email.php';
 $usuario = requireRole('participante');
 $eventoId = filter_var($_GET['id'] ?? $_POST['evento_id'] ?? null, FILTER_VALIDATE_INT);
 if (!$eventoId || $eventoId < 1) {
@@ -16,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     validateCsrfToken();
     try {
         inscreverParticipante($pdo, (int) $usuario['id'], $eventoId);
+        notificarInscricaoConfirmada($pdo, $usuario, $eventoId);
         header('Location: minhas-inscricoes.php?inscricao=confirmada');
         exit;
     } catch (DomainException $exception) {
@@ -64,7 +66,7 @@ $programacao = $consulta->fetchAll();
 <body class="app-body">
     <div class="app-shell app-shell--compact">
         <?php appHeader($usuario); ?>
-        <main class="app-content">
+        <main class="app-content" id="conteudo">
             <?php renderNotice($mensagem, $erro); ?>
             <section class="app-surface" aria-label="Detalhes do evento">
                 <div class="app-event-hero">
@@ -76,41 +78,47 @@ $programacao = $consulta->fetchAll();
                 </div>
                 <p class="app-event-description"><?= nl2br(h($evento['descricao'])) ?></p>
                 <div class="app-detail-list">
-                    <div class="app-detail-item"><div class="app-detail-item__icon" aria-hidden="true">📅</div><div><strong>Início</strong><?= h(formatDateTime($evento['data_inicio'])) ?></div></div>
-                    <div class="app-detail-item"><div class="app-detail-item__icon" aria-hidden="true">⏱️</div><div><strong>Encerramento</strong><?= h(formatDateTime($evento['data_fim'])) ?></div></div>
+                    <div class="app-detail-item"><div class="app-detail-item__icon" aria-hidden="true">📅</div><div><strong>Data e horário</strong><?= h(formatPeriodo($evento['data_inicio'], $evento['data_fim'])) ?></div></div>
                     <div class="app-detail-item"><div class="app-detail-item__icon" aria-hidden="true">📍</div><div><strong>Local</strong><?= h($evento['local']) ?></div></div>
                     <div class="app-detail-item"><div class="app-detail-item__icon" aria-hidden="true">🎟️</div><div><strong>Vagas</strong><?= $vagas === null ? 'Sem limite informado' : ($vagas > 0 ? (int) $vagas . ' disponíveis' : 'Vagas esgotadas') ?></div></div>
                     <div class="app-detail-item"><div class="app-detail-item__icon" aria-hidden="true">💳</div><div><strong>Inscrição</strong><?= (float) $evento['valor_inscricao'] > 0 ? h(financeiroMoeda($evento['valor_inscricao'])) . ' · pagamento registrado pela organização' : 'Gratuita' ?></div></div>
                 </div>
+                <?php
+                $motivoFechado = (int) $evento['aceita_inscricao'] !== 1
+                    ? 'As inscrições se encerram no início do evento.'
+                    : 'Todas as vagas deste evento já foram preenchidas.';
+                ?>
+                <div class="app-action-group">
+                    <?php if ($evento['minha_inscricao'] === 'ativa'): ?>
+                        <a class="app-button app-button--secondary" href="minhas-inscricoes.php">✓ Você está inscrito · ver inscrição</a>
+                    <?php elseif ((int) $evento['aceita_inscricao'] === 1 && ($vagas === null || $vagas > 0)): ?>
+                        <form method="post" action="detalhes-evento.php?id=<?= (int) $evento['id'] ?>">
+                            <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
+                            <input type="hidden" name="evento_id" value="<?= (int) $evento['id'] ?>">
+                            <button class="app-button" type="submit"><?= $evento['minha_inscricao'] === 'cancelada' ? 'Inscrever-se novamente' : 'Inscrever-se' ?></button>
+                        </form>
+                    <?php else: ?>
+                        <span class="app-button app-button--secondary" aria-disabled="true">Inscrições encerradas</span>
+                    <?php endif; ?>
+                    <a class="app-button app-button--ghost" href="eventos.php">Voltar aos eventos</a>
+                </div>
+                <?php if ($evento['minha_inscricao'] !== 'ativa' && !((int) $evento['aceita_inscricao'] === 1 && ($vagas === null || $vagas > 0))): ?>
+                    <p class="app-results-count"><?= h($motivoFechado) ?></p>
+                <?php elseif ($evento['minha_inscricao'] !== 'ativa'): ?>
+                    <p class="app-results-count">Você poderá cancelar a inscrição até 24 horas antes do início do evento.</p>
+                <?php endif; ?>
                 <section class="app-section" aria-labelledby="programacao-evento">
                     <h3 id="programacao-evento" class="app-section__title">Programação</h3>
                     <?php if (!$programacao): ?>
                         <p class="app-empty">A programação deste evento ainda não foi publicada.</p>
                     <?php endif; ?>
                     <?php foreach ($programacao as $atividade): ?>
-                        <div class="app-detail-item">
-                            <div class="app-detail-item__icon" aria-hidden="true">◷</div>
-                            <div>
-                                <strong><?= h(date('d/m H:i', strtotime($atividade['inicio']))) ?>–<?= h(date('H:i', strtotime($atividade['fim']))) ?> · <?= h($atividade['titulo']) ?></strong>
-                                <?= h($atividade['tipo']) ?> · <?= h($atividade['espaco_nome']) ?><?= $atividade['palestrantes'] ? ' · ' . h($atividade['palestrantes']) : '' ?>
-                            </div>
+                        <div class="app-program-item">
+                            <strong><?= h(date('d/m', strtotime($atividade['inicio']))) ?> · <?= h(date('H\hi', strtotime($atividade['inicio']))) ?>–<?= h(date('H\hi', strtotime($atividade['fim']))) ?> · <?= h($atividade['titulo']) ?></strong>
+                            <span><?= h($atividade['tipo']) ?> · <?= h($atividade['espaco_nome']) ?><?= $atividade['palestrantes'] ? ' · ' . h($atividade['palestrantes']) : '' ?></span>
                         </div>
                     <?php endforeach; ?>
                 </section>
-                <div class="app-action-group">
-                    <?php if ($evento['minha_inscricao'] === 'ativa'): ?>
-                        <a class="app-button app-button--secondary" href="minhas-inscricoes.php">Você já está inscrito</a>
-                    <?php elseif ((int) $evento['aceita_inscricao'] === 1 && ($vagas === null || $vagas > 0)): ?>
-                        <form method="post" action="detalhes-evento.php?id=<?= (int) $evento['id'] ?>">
-                            <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
-                            <input type="hidden" name="evento_id" value="<?= (int) $evento['id'] ?>">
-                            <button class="app-button" type="submit">Inscrever-se</button>
-                        </form>
-                    <?php else: ?>
-                        <span class="app-button app-button--secondary">Inscrições encerradas</span>
-                    <?php endif; ?>
-                    <a class="app-button app-button--ghost" href="eventos.php">Voltar aos eventos</a>
-                </div>
             </section>
         </main>
         <?php appNavigation('eventos'); ?>

@@ -1,3 +1,11 @@
 .vscode
 .tmp.drivedownload
 .tmp.driveupload
+
+# Configuração do servidor (senhas do banco e do e-mail)
+config.local.php
+
+# Dados gerados pela aplicação (logs e e-mails do ambiente de desenvolvimento)
+storage/*
+!storage/.htaccess
+!storage/index.html

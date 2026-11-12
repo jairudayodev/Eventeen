@@ -35,6 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erro = 'O código de organizador é inválido.';
     } else {
         try {
+            $senhaHash = password_hash($senha, PASSWORD_DEFAULT);
             $inserir = $pdo->prepare(
                 'INSERT INTO usuarios (nome, email, matricula, senha_hash, perfil)
                  VALUES (:nome, :email, :matricula, :senha_hash, :perfil)'
@@ -43,17 +44,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'nome' => $nome,
                 'email' => $email,
                 'matricula' => $matricula !== '' ? $matricula : null,
-                'senha_hash' => password_hash($senha, PASSWORD_DEFAULT),
+                'senha_hash' => $senhaHash,
                 'perfil' => $perfil,
             ]);
 
-            session_regenerate_id(true);
-            $_SESSION['usuario'] = [
+            iniciarSessaoUsuario([
                 'id' => (int) $pdo->lastInsertId(),
                 'nome' => $nome,
                 'email' => $email,
                 'perfil' => $perfil,
-            ];
+                'senha_hash' => $senhaHash,
+            ]);
             header('Location: ' . profileHomePath($perfil));
             exit;
         } catch (PDOException $exception) {

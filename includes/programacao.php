@@ -5,7 +5,7 @@ require_once __DIR__ . '/../config.php';
 function programacaoEventos(PDO $pdo, int $usuarioId): array
 {
     $consulta = $pdo->prepare(
-        'SELECT e.id, e.titulo, e.data_inicio, e.data_fim, e.capacidade
+        'SELECT e.id, e.titulo, e.status, e.data_inicio, e.data_fim, e.capacidade
          FROM eventos e
          WHERE ' . organizadorEscopoEventoSql('e.id') . '
          ORDER BY e.data_inicio DESC, e.id DESC'

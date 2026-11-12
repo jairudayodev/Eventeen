@@ -129,14 +129,8 @@ renderManagementStart(
     <p class="management-notice<?= $erro ? ' management-notice--error' : '' ?>" role="<?= $erro ? 'alert' : 'status' ?>"><?= h($mensagem) ?></p>
 <?php endif; ?>
 <?php if ($eventos): ?>
-    <form class="management-toolbar" method="get" action="parceiros.php">
-        <label class="management-muted" for="evento-parceiros">Evento</label>
-        <select id="evento-parceiros" class="management-select" name="evento_id">
-            <?php foreach ($eventos as $evento): ?>
-                <option value="<?= (int) $evento['id'] ?>"<?= (int) $evento['id'] === $eventoId ? ' selected' : '' ?>><?= h($evento['titulo']) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <button class="management-button management-button--secondary" type="submit">Abrir evento</button>
+    <form class="management-toolbar management-event-picker" method="get" action="parceiros.php">
+        <?php managementEventPicker($eventos, $eventoId, 'Abrir'); ?>
     </form>
 <?php else: ?>
     <p class="management-notice">Cadastre um evento para registrar patrocínios.</p>
@@ -246,7 +240,7 @@ renderManagementStart(
                                             <?php if ($patrocinio['status'] === 'negociacao'): ?>
                                                 <button class="management-button management-button--secondary" name="status" value="confirmado" type="submit">Confirmar</button>
                                             <?php endif; ?>
-                                            <button class="management-button management-button--secondary" name="status" value="cancelado" type="submit">Cancelar</button>
+                                            <button class="management-button management-button--secondary" name="status" value="cancelado" type="submit" onclick="return confirm('Cancelar este patrocínio? Um patrocínio cancelado não pode ser reativado.');">Cancelar</button>
                                         </form>
                                     <?php else: ?>—<?php endif; ?>
                                 </td>

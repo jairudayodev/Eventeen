@@ -37,7 +37,7 @@ $rotulosPagamento = ['pendente' => 'Pagamento pendente', 'confirmado' => 'Pagame
 <body class="app-body">
     <div class="app-shell app-shell--compact">
         <?php appHeader($usuario); ?>
-        <main class="app-content">
+        <main class="app-content" id="conteudo">
             <header class="app-header"><h1>Minhas inscrições</h1></header>
             <?php renderNotice($confirmacao); ?>
             <?php renderNotice($cancelamento, ($_GET['cancelamento'] ?? '') === 'indisponivel'); ?>
@@ -54,16 +54,20 @@ $rotulosPagamento = ['pendente' => 'Pagamento pendente', 'confirmado' => 'Pagame
                             <div class="app-event-card__art" aria-hidden="true">🗓️</div>
                             <div class="app-event-card__meta">
                                 <h3 class="app-event-card__title"><?= h($inscricao['titulo']) ?></h3>
-                                <div class="app-event-card__details"><span>📅 <?= h(formatDateTime($inscricao['data_inicio'])) ?></span></div>
+                                <div class="app-event-card__details"><span>📅 <?= h(formatPeriodo($inscricao['data_inicio'], $inscricao['data_fim'])) ?></span></div>
                                 <div class="app-event-card__details"><span>📍 <?= h($inscricao['local']) ?></span></div>
                                 <?php if ((float) $inscricao['valor_inscricao'] > 0): ?>
                                     <div class="app-event-card__details"><span>💳 <?= h(financeiroMoeda($inscricao['valor_inscricao'])) ?> · <?= h($rotulosPagamento[$inscricao['pagamento_status'] ?? ''] ?? 'Pagamento não registrado') ?></span></div>
                                 <?php endif; ?>
                                 <span class="app-event-card__status">✓ Confirmada</span>
+                                <?php if ((int) $inscricao['pode_cancelar'] === 1): ?>
+                                    <div class="app-event-card__details"><span>Cancelamento permitido até <?= h(date('d/m/Y \à\s H\hi', strtotime($inscricao['data_inicio']) - 86400)) ?></span></div>
+                                <?php endif; ?>
                             </div>
                         </div>
+                        <a class="app-event-card__cta" href="detalhes-evento.php?id=<?= (int) $inscricao['id'] ?>">Ver evento e programação</a>
                         <?php if ((int) $inscricao['pode_cancelar'] === 1): ?>
-                            <a class="app-event-card__cta" href="cancelar-inscricao.php?id=<?= (int) $inscricao['inscricao_id'] ?>">Cancelar inscrição</a>
+                            <a class="app-event-card__cta app-event-card__cta--secundario" href="cancelar-inscricao.php?id=<?= (int) $inscricao['inscricao_id'] ?>">Cancelar inscrição</a>
                         <?php else: ?>
                             <span class="app-event-card__cta app-event-card__cta--disabled" title="Cancelamento permitido até 24 horas antes do início e sem presença registrada.">Cancelamento encerrado</span>
                         <?php endif; ?>

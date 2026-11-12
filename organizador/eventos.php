@@ -151,6 +151,8 @@ renderManagementStart(
                     <td data-label="Ações">
                         <div class="management-actions management-event-actions">
                             <a class="management-button management-button--secondary" href="evento-form.php?id=<?= (int) $evento['id'] ?>">Editar</a>
+                            <a class="management-button management-button--secondary" href="atividades.php?evento_id=<?= (int) $evento['id'] ?>">Programação</a>
+                            <a class="management-button management-button--secondary" href="presencas.php?evento_id=<?= (int) $evento['id'] ?>">Presenças</a>
                             <?php if (in_array($evento['status'], ['rascunho', 'publicado'], true)): ?>
                                 <?php if ($evento['status'] === 'publicado'): ?>
                                     <form method="post" action="eventos.php" onsubmit="return confirm('Encerrar este evento? As inscrições serão fechadas e o histórico será preservado.');">

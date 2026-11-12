@@ -1377,3 +1377,207 @@ body.app-body {
         grid-template-columns: 1fr;
     }
 }
+
+/* ------------------------------------------------------------------
+ * Ajustes de usabilidade (revisão de 12/11/2026)
+ * ------------------------------------------------------------------ */
+
+.skip-link {
+    position: absolute;
+    z-index: 100;
+    top: -60px;
+    left: 12px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: var(--vermelho);
+    color: #fff;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.skip-link:focus {
+    top: 12px;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+    outline: 3px solid rgba(192, 23, 45, .45);
+    outline-offset: 2px;
+}
+
+.app-topbar__actions {
+    gap: 8px;
+}
+
+.app-topbar__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 38px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: #2d3748;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.app-topbar__link:hover {
+    background: #f3f4f7;
+    color: var(--vermelho);
+}
+
+.app-topbar__link span[aria-hidden] {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.app-topbar__link--destaque {
+    background: var(--rosa-claro);
+    color: var(--vermelho);
+}
+
+/* Evita que textos longos (datas, títulos) alarguem a página em telas estreitas (RNF05). */
+.app-content,
+.app-event-card,
+.app-event-card__meta,
+.app-surface {
+    min-width: 0;
+}
+
+.app-event-card__inner {
+    grid-template-columns: 88px minmax(0, 1fr);
+}
+
+.app-event-card__title,
+.app-event-card__details,
+.app-event-hero h2,
+.app-detail-item {
+    overflow-wrap: anywhere;
+}
+
+.app-event-card__status--esgotado {
+    background: #fdecee;
+    color: var(--vermelho);
+}
+
+.app-event-card__status--inscrito {
+    background: #eef2ff;
+    color: #3949ab;
+}
+
+.app-event-card__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.app-program-item {
+    padding: 12px 0;
+    border-bottom: 1px solid #eef0f5;
+}
+
+.app-program-item:last-child {
+    border-bottom: 0;
+}
+
+.app-program-item strong {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.app-program-item span {
+    color: var(--cinza);
+    font-size: 14px;
+}
+
+.app-search button {
+    min-height: 34px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 9px;
+    background: var(--vermelho);
+    color: #fff;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.app-results-count {
+    margin: 0;
+    color: var(--cinza);
+    font-size: 14px;
+}
+
+@media (max-width: 520px) {
+    .app-topbar {
+        padding-inline: 14px;
+    }
+
+    .app-topbar__text,
+    .app-pill {
+        display: none;
+    }
+
+    .app-topbar__link {
+        padding: 0 8px;
+    }
+
+    .app-topbar__link span[aria-hidden] {
+        font-size: 21px;
+    }
+}
+
+@media (min-width: 760px) {
+    .app-event-card__inner {
+        grid-template-columns: minmax(110px, 150px) minmax(0, 1fr);
+    }
+
+    .app-results-count {
+        grid-column: 1 / -1;
+        margin-top: -8px;
+    }
+}
+
+.app-event-card__cta + .app-event-card__cta {
+    margin-top: 8px;
+}
+
+.app-event-card__cta--secundario {
+    border-color: #e4e7ee;
+    color: #4d586c;
+}
+
+/* Recuperação de senha */
+.link-auxiliar {
+    display: inline-block;
+    margin-top: 8px;
+    color: var(--vermelho, #c0172d);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.link-auxiliar:hover {
+    text-decoration: none;
+}
+
+.auth-texto {
+    margin: 0 0 18px;
+    color: var(--cinza, #5f6368);
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+a.botao {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}

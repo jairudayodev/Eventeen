@@ -274,6 +274,35 @@ CREATE TABLE IF NOT EXISTS pagamentos_inscricoes (
         FOREIGN KEY (registrado_por) REFERENCES usuarios (id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
+-- Segurança de acesso: limite de tentativas de login e de pedidos de
+-- recuperação de senha (por e-mail e por endereço IP).
+CREATE TABLE IF NOT EXISTS tentativas_acesso (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    tipo ENUM('login', 'recuperacao') NOT NULL,
+    email VARCHAR(190) NOT NULL,
+    ip VARCHAR(45) NOT NULL,
+    criado_em DATETIME NOT NULL,
+    PRIMARY KEY (id),
+    KEY idx_tentativas_email (tipo, email, criado_em),
+    KEY idx_tentativas_ip (tipo, ip, criado_em),
+    KEY idx_tentativas_data (criado_em)
+) ENGINE=InnoDB;
+
+-- Links de redefinição de senha: guarda apenas o hash do código enviado por e-mail.
+CREATE TABLE IF NOT EXISTS redefinicoes_senha (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    usuario_id BIGINT UNSIGNED NOT NULL,
+    token_hash CHAR(64) NOT NULL,
+    expira_em DATETIME NOT NULL,
+    usado_em DATETIME NULL,
+    criado_em DATETIME NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_redefinicoes_token (token_hash),
+    KEY idx_redefinicoes_usuario (usuario_id),
+    CONSTRAINT fk_redefinicoes_usuario
+        FOREIGN KEY (usuario_id) REFERENCES usuarios (id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 INSERT INTO eventos
     (titulo, descricao, categoria, local, data_inicio, data_fim, capacidade, status)
 SELECT 'Conexões Inteligentes',
