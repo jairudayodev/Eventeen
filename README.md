@@ -27,7 +27,7 @@ O `banco.sql` pode ser reimportado sobre um banco existente: ele cria as tabelas
 
 ### Primeiro administrador
 
-O cadastro público cria somente contas de participante. Depois de criar a sua conta, promova-a a administrador uma única vez pelo phpMyAdmin ou pelo terminal:
+No cadastro público, escolha criar uma conta de participante ou organizador. Depois de criar sua conta, promova-a a administrador uma única vez pelo phpMyAdmin ou pelo terminal:
 
 ```sql
 UPDATE eventeen.usuarios SET perfil = 'administrador' WHERE email = 'seu-email@exemplo.com';
@@ -39,8 +39,8 @@ A partir daí, o administrador concede ou revoga os perfis de organizador e admi
 
 | Área | Funcionalidades |
 | --- | --- |
-| Acesso | Cadastro de participante, login, "manter conectado", logout por POST com proteção CSRF, alteração de dados e de senha. O perfil é relido a cada requisição, então concessões e revogações valem imediatamente. |
-| Administração | Painel com totais reais, busca e filtro de usuários, edição de dados e de perfil (participante, organizador, administrador), com proteção do último administrador e do organizador único de um evento ativo. |
+| Acesso | Cadastro de participante ou organizador, login, "manter conectado", logout por POST com proteção CSRF, alteração de dados e de senha. O perfil é relido a cada requisição, então concessões e revogações valem imediatamente. |
+| Administração | Painel com totais reais, busca e filtro de usuários, edição de dados e de perfil (participante, organizador, administrador), com proteção do último administrador e do organizador único de um evento ativo. Administradores também têm acesso às áreas de participante e organização, podendo gerenciar todos os eventos. |
 | Eventos | Cadastro, edição, publicação, cancelamento e encerramento, com vários organizadores, vagas, local e valor de inscrição opcional. As alterações preservam inscrições e demais registros. |
 | Consulta e inscrição | Busca e filtro de eventos publicados, detalhes com programação, vagas restantes e valor; inscrição transacional com bloqueio de concorrência e sem duplicidade. |
 | Cancelamento | Permitido até 24 horas antes do início do evento e enquanto não houver presença registrada; liberação da vaga uma única vez. |

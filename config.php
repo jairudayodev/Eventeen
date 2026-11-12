@@ -135,12 +135,28 @@ function requireRole(string ...$perfisPermitidos): array
     $usuario = requireLogin();
     $perfil = (string) ($usuario['perfil'] ?? 'participante');
 
-    if (!in_array($perfil, $perfisPermitidos, true)) {
+    if ($perfil !== 'administrador' && !in_array($perfil, $perfisPermitidos, true)) {
         header('Location: ' . applicationRootPrefix() . profileHomePath($perfil));
         exit;
     }
 
     return $usuario;
+}
+
+function organizadorEscopoEventoSql(string $eventoId): string
+{
+    return "EXISTS (
+        SELECT 1 FROM usuarios usuario_escopo
+        WHERE usuario_escopo.id = :usuario_id
+          AND (
+              usuario_escopo.perfil = 'administrador'
+              OR EXISTS (
+                  SELECT 1 FROM evento_organizadores evento_escopo
+                  WHERE evento_escopo.evento_id = {$eventoId}
+                    AND evento_escopo.usuario_id = usuario_escopo.id
+              )
+          )
+    )";
 }
 
 function displayName(array $usuario): string

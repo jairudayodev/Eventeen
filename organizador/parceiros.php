@@ -84,10 +84,15 @@ if ($eventoId !== null && $eventoAtual === null) {
 }
 
 $consulta = $pdo->prepare(
-    'SELECT id, nome, email, telefone FROM parceiros
-     WHERE criado_por = :usuario_id ORDER BY nome, id'
+    'SELECT p.id, p.nome, p.email, p.telefone FROM parceiros p
+     WHERE p.criado_por = :usuario_id
+        OR EXISTS (
+            SELECT 1 FROM usuarios usuario_admin
+            WHERE usuario_admin.id = :admin_id AND usuario_admin.perfil = \'administrador\'
+        )
+     ORDER BY p.nome, p.id'
 );
-$consulta->execute(['usuario_id' => $usuarioId]);
+$consulta->execute(['usuario_id' => $usuarioId, 'admin_id' => $usuarioId]);
 $parceiros = $consulta->fetchAll();
 $patrocinios = [];
 if ($eventoId !== null) {
@@ -134,7 +139,7 @@ renderManagementStart(
         <button class="management-button management-button--secondary" type="submit">Abrir evento</button>
     </form>
 <?php else: ?>
-    <p class="management-notice">Cadastre um evento e vincule seu usuário como organizador para registrar patrocínios.</p>
+    <p class="management-notice">Cadastre um evento para registrar patrocínios.</p>
 <?php endif; ?>
 
 <form class="management-panel" method="post" action="parceiros.php">

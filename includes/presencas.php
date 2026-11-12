@@ -15,15 +15,14 @@ function registrarPresencaAtividade(
         $consulta = $pdo->prepare(
             'SELECT a.id
              FROM atividades a
-             JOIN evento_organizadores eo
-               ON eo.evento_id = a.evento_id AND eo.usuario_id = :organizador_id
              WHERE a.id = :atividade_id AND a.evento_id = :evento_id
+               AND ' . organizadorEscopoEventoSql('a.evento_id') . '
              FOR UPDATE'
         );
         $consulta->execute([
-            'organizador_id' => $organizadorId,
             'atividade_id' => $atividadeId,
             'evento_id' => $eventoId,
+            'usuario_id' => $organizadorId,
         ]);
         if (!$consulta->fetch()) {
             throw new DomainException('Atividade não encontrada neste evento ou você não tem permissão para registrar presenças.');

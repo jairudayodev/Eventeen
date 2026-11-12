@@ -114,6 +114,11 @@ h1 {
     font-weight: 400;
 }
 
+.campo-obrigatorio {
+    color: var(--vermelho);
+    font-weight: 700;
+}
+
 .campo input {
     display: block;
     width: 100%;
@@ -136,6 +141,74 @@ h1 {
 .campo input:focus {
     border-color: var(--vermelho);
     box-shadow: 0 0 0 3px rgba(192, 23, 45, .12);
+}
+
+.selecao-perfil {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.selecao-perfil legend {
+    margin-bottom: 8px;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.opcoes-perfil {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.opcao-perfil {
+    position: relative;
+    cursor: pointer;
+}
+
+.opcao-perfil input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    clip-path: inset(50%);
+}
+
+.opcao-perfil__conteudo {
+    display: flex;
+    min-height: 76px;
+    padding: 13px 15px;
+    border: 1px solid var(--borda);
+    border-radius: 11px;
+    background: var(--branco);
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    transition: border-color .18s ease, background-color .18s ease, box-shadow .18s ease;
+}
+
+.opcao-perfil__conteudo strong {
+    font-size: 15px;
+}
+
+.opcao-perfil__conteudo small {
+    color: var(--cinza);
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.opcao-perfil input:checked + .opcao-perfil__conteudo {
+    border-color: var(--vermelho);
+    background: var(--rosa-claro);
+    box-shadow: 0 0 0 2px rgba(192, 23, 45, .1);
+}
+
+.opcao-perfil input:focus-visible + .opcao-perfil__conteudo {
+    outline: 3px solid rgba(192, 23, 45, .35);
+    outline-offset: 3px;
 }
 
 .ajuda {

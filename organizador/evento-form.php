@@ -18,17 +18,14 @@ if ($idRecebido !== null) {
     }
 }
 $evento = null;
-$organizadoresSelecionados = [(int) $usuario['id']];
+$organizadoresSelecionados = $usuario['perfil'] === 'organizador' ? [(int) $usuario['id']] : [];
 
 if ($eventoId !== null) {
     $consulta = $pdo->prepare(
         'SELECT e.*
          FROM eventos e
          WHERE e.id = :evento_id
-           AND EXISTS (
-               SELECT 1 FROM evento_organizadores eo
-               WHERE eo.evento_id = e.id AND eo.usuario_id = :usuario_id
-           )'
+           AND ' . organizadorEscopoEventoSql('e.id')
     );
     $consulta->execute(['evento_id' => $eventoId, 'usuario_id' => (int) $usuario['id']]);
     $evento = $consulta->fetch();
@@ -83,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $idsOrganizadores = array_values(array_unique($idsOrganizadores));
     }
-    if (!$erro && $eventoId === null) {
+    if (!$erro && $eventoId === null && $usuario['perfil'] === 'organizador') {
         $idsOrganizadores[] = (int) $usuario['id'];
         $idsOrganizadores = array_values(array_unique($idsOrganizadores));
     }
@@ -151,10 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'SELECT e.status
                      FROM eventos e
                      WHERE e.id = :evento_id
-                       AND EXISTS (
-                           SELECT 1 FROM evento_organizadores eo
-                           WHERE eo.evento_id = e.id AND eo.usuario_id = :usuario_id
-                       )
+                       AND ' . organizadorEscopoEventoSql('e.id') . '
                      FOR UPDATE'
                 );
                 $consulta->execute(['evento_id' => $eventoId, 'usuario_id' => (int) $usuario['id']]);
@@ -281,7 +275,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     if ($erro && isset($idsOrganizadores)) {
         $organizadoresSelecionados = $idsOrganizadores;
-        if ($eventoId === null) {
+        if ($eventoId === null && $usuario['perfil'] === 'organizador') {
             $organizadoresSelecionados[] = (int) $usuario['id'];
         }
     }

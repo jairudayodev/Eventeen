@@ -146,9 +146,23 @@ function salvarPatrocinio(
         $descricaoApoio
     ): int {
         $consulta = $pdo->prepare(
-            'SELECT id FROM parceiros WHERE id = :parceiro_id AND criado_por = :usuario_id FOR UPDATE'
+            'SELECT p.id FROM parceiros p
+             WHERE p.id = :parceiro_id
+               AND (
+                   p.criado_por = :usuario_id
+                   OR EXISTS (
+                       SELECT 1 FROM usuarios usuario_admin
+                       WHERE usuario_admin.id = :admin_id
+                         AND usuario_admin.perfil = \'administrador\'
+                   )
+               )
+             FOR UPDATE'
         );
-        $consulta->execute(['parceiro_id' => $parceiroId, 'usuario_id' => $usuarioId]);
+        $consulta->execute([
+            'parceiro_id' => $parceiroId,
+            'usuario_id' => $usuarioId,
+            'admin_id' => $usuarioId,
+        ]);
         if ($consulta->fetchColumn() === false) {
             throw new DomainException('Parceiro não encontrado na sua lista.');
         }
@@ -180,8 +194,8 @@ function atualizarStatusPatrocinio(PDO $pdo, int $patrocinioId, int $usuarioId, 
         $consulta = $pdo->prepare(
             'SELECT p.id, p.status
              FROM patrocinios p
-             JOIN evento_organizadores eo ON eo.evento_id = p.evento_id
-             WHERE p.id = :patrocinio_id AND eo.usuario_id = :usuario_id
+             WHERE p.id = :patrocinio_id
+               AND ' . organizadorEscopoEventoSql('p.evento_id') . '
              FOR UPDATE'
         );
         $consulta->execute(['patrocinio_id' => $patrocinioId, 'usuario_id' => $usuarioId]);
@@ -290,10 +304,7 @@ function salvarLancamentoFinanceiro(
         $consulta = $pdo->prepare(
             'SELECT e.id FROM eventos e
              WHERE e.id IN (' . implode(', ', $placeholders) . ')
-               AND EXISTS (
-                   SELECT 1 FROM evento_organizadores eo
-                   WHERE eo.evento_id = e.id AND eo.usuario_id = :usuario_id
-               )
+               AND ' . organizadorEscopoEventoSql('e.id') . '
              ORDER BY e.id FOR UPDATE'
         );
         $consulta->execute($parametros);
@@ -306,9 +317,8 @@ function salvarLancamentoFinanceiro(
             $consulta = $pdo->prepare(
                 "SELECT p.evento_id, p.valor
                  FROM patrocinios p
-                 JOIN evento_organizadores eo ON eo.evento_id = p.evento_id
                  WHERE p.id = :patrocinio_id
-                   AND eo.usuario_id = :usuario_id
+                   AND " . organizadorEscopoEventoSql('p.evento_id') . "
                    AND p.status = 'confirmado'
                    AND p.tipo_apoio = 'financeiro'
                  FOR UPDATE"
@@ -377,18 +387,27 @@ function atualizarStatusLancamento(PDO $pdo, int $lancamentoId, int $usuarioId, 
         $consulta = $pdo->prepare(
             'SELECT l.id, l.status
              FROM financeiro_lancamentos l
-             WHERE l.id = :lancamento_id AND l.criado_por = :usuario_id
+             WHERE l.id = :lancamento_id
+               AND (
+                   l.criado_por = :criador_id
+                   OR EXISTS (
+                       SELECT 1 FROM usuarios usuario_admin
+                       WHERE usuario_admin.id = :admin_id
+                         AND usuario_admin.perfil = \'administrador\'
+                   )
+               )
                AND EXISTS (
                    SELECT 1 FROM financeiro_rateios fr
-                   JOIN evento_organizadores eo ON eo.evento_id = fr.evento_id
-                   WHERE fr.lancamento_id = l.id AND eo.usuario_id = :organizador_id
+                   WHERE fr.lancamento_id = l.id
+                     AND ' . organizadorEscopoEventoSql('fr.evento_id') . '
                )
              FOR UPDATE'
         );
         $consulta->execute([
             'lancamento_id' => $lancamentoId,
+            'admin_id' => $usuarioId,
+            'criador_id' => $usuarioId,
             'usuario_id' => $usuarioId,
-            'organizador_id' => $usuarioId,
         ]);
         $lancamento = $consulta->fetch();
         if (!$lancamento) {
@@ -508,13 +527,10 @@ function financeiroInscricaoDoOrganizador(PDO $pdo, int $inscricaoId, int $organ
          FROM inscricoes i
          JOIN eventos e ON e.id = i.evento_id
          WHERE i.id = :inscricao_id
-           AND EXISTS (
-               SELECT 1 FROM evento_organizadores eo
-               WHERE eo.evento_id = i.evento_id AND eo.usuario_id = :organizador_id
-           )
+           AND ' . organizadorEscopoEventoSql('i.evento_id') . '
          FOR UPDATE'
     );
-    $consulta->execute(['inscricao_id' => $inscricaoId, 'organizador_id' => $organizadorId]);
+    $consulta->execute(['inscricao_id' => $inscricaoId, 'usuario_id' => $organizadorId]);
     $inscricao = $consulta->fetch();
     if (!$inscricao) {
         throw new DomainException('Inscrição não encontrada ou você não tem permissão sobre este evento.');

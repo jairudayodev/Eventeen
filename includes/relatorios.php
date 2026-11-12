@@ -115,11 +115,8 @@ function relatorioPorEvento(PDO $pdo, int $organizadorId, array $filtros = []): 
                    (SELECT COUNT(*) FROM atividades a WHERE a.evento_id = e.id) AS atividades,
                    (SELECT COUNT(*) FROM certificados c WHERE c.evento_id = e.id) AS certificados
             FROM eventos e
-            WHERE EXISTS (
-                SELECT 1 FROM evento_organizadores eo
-                WHERE eo.evento_id = e.id AND eo.usuario_id = :usuario_id
-            )" . relatorioCondicoesEvento($filtros, $parametros) . '
-            ORDER BY e.data_inicio DESC, e.id DESC';
+            WHERE " . organizadorEscopoEventoSql('e.id') . relatorioCondicoesEvento($filtros, $parametros) . "
+            ORDER BY e.data_inicio DESC, e.id DESC";
     $consulta = $pdo->prepare($sql);
     $consulta->execute($parametros);
     $linhas = $consulta->fetchAll();
@@ -148,11 +145,8 @@ function relatorioPorAtividade(PDO $pdo, int $organizadorId, array $filtros = []
                     WHERE pa.atividade_id = a.id) AS presencas
             FROM atividades a
             JOIN eventos e ON e.id = a.evento_id
-            WHERE EXISTS (
-                SELECT 1 FROM evento_organizadores eo
-                WHERE eo.evento_id = e.id AND eo.usuario_id = :usuario_id
-            )" . relatorioCondicoesEvento($filtros, $parametros) . '
-            ORDER BY a.inicio DESC, a.id DESC';
+            WHERE " . organizadorEscopoEventoSql('e.id') . relatorioCondicoesEvento($filtros, $parametros) . "
+            ORDER BY a.inicio DESC, a.id DESC";
     $consulta = $pdo->prepare($sql);
     $consulta->execute($parametros);
     $linhas = $consulta->fetchAll();

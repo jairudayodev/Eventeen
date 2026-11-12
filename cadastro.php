@@ -8,6 +8,7 @@ if (!empty($_SESSION['usuario'])) {
 }
 
 $erro = null;
+$perfil = 'participante';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     validateCsrfToken();
     $nome = trim((string) ($_POST['nome'] ?? ''));
@@ -15,8 +16,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $matricula = trim((string) ($_POST['matricula'] ?? ''));
     $senha = (string) ($_POST['senha'] ?? '');
     $confirmacao = (string) ($_POST['confirmar-senha'] ?? '');
+    $perfil = (string) ($_POST['perfil'] ?? '');
 
-    if ($nome === '' || strlen($nome) > 150 || !$email || strlen($email) > 190) {
+    if (!in_array($perfil, ['participante', 'organizador'], true)) {
+        $erro = 'Selecione se deseja se cadastrar como participante ou organizador.';
+    } elseif ($nome === '' || strlen($nome) > 150 || !$email || strlen($email) > 190) {
         $erro = 'Informe um nome e um e-mail válidos.';
     } elseif (strlen($matricula) > 40) {
         $erro = 'A matrícula deve ter no máximo 40 caracteres.';
@@ -29,14 +33,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         try {
             $inserir = $pdo->prepare(
-                'INSERT INTO usuarios (nome, email, matricula, senha_hash)
-                 VALUES (:nome, :email, :matricula, :senha_hash)'
+                'INSERT INTO usuarios (nome, email, matricula, senha_hash, perfil)
+                 VALUES (:nome, :email, :matricula, :senha_hash, :perfil)'
             );
             $inserir->execute([
                 'nome' => $nome,
                 'email' => $email,
                 'matricula' => $matricula !== '' ? $matricula : null,
                 'senha_hash' => password_hash($senha, PASSWORD_DEFAULT),
+                'perfil' => $perfil,
             ]);
 
             session_regenerate_id(true);
@@ -44,9 +49,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'id' => (int) $pdo->lastInsertId(),
                 'nome' => $nome,
                 'email' => $email,
-                'perfil' => 'participante',
+                'perfil' => $perfil,
             ];
-            header('Location: inicio-participante.php');
+            header('Location: ' . profileHomePath($perfil));
             exit;
         } catch (PDOException $exception) {
             if ($exception->getCode() !== '23000') {
@@ -77,6 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <p class="eyebrow">Faça parte da nossa comunidade</p>
                 <h1 id="titulo">Criar conta</h1>
                 <p class="subtitulo">Seu acesso aos eventos acadêmicos.</p>
+                <p class="ajuda">Campos marcados com <strong class="campo-obrigatorio">*</strong> são obrigatórios.</p>
             </header>
 
             <?php if ($erro !== null): ?>
@@ -86,12 +92,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <form class="auth-form" action="cadastro.php" method="post">
                 <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                 <div class="campo">
-                    <label for="nome">Nome completo</label>
+                    <label for="nome">Nome completo <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                     <input type="text" id="nome" name="nome" autocomplete="name" placeholder="Digite seu nome completo" required>
                 </div>
 
                 <div class="campo">
-                    <label for="email">E-mail</label>
+                    <label for="email">E-mail <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                     <input type="email" id="email" name="email" autocomplete="email" placeholder="seuemail@exemplo.com" required>
                 </div>
 
@@ -100,20 +106,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="text" id="matricula" name="matricula" autocomplete="off" placeholder="Digite sua matrícula">
                 </div>
 
+                <fieldset class="selecao-perfil">
+                    <legend>Quero me cadastrar como <span class="campo-obrigatorio" aria-hidden="true">*</span></legend>
+                    <div class="opcoes-perfil">
+                        <label class="opcao-perfil">
+                            <input type="radio" name="perfil" value="participante" required <?= $perfil === 'participante' ? 'checked' : '' ?>>
+                            <span class="opcao-perfil__conteudo">
+                                <strong>Participante</strong>
+                                <small>Encontrar eventos e fazer inscrições.</small>
+                            </span>
+                        </label>
+                        <label class="opcao-perfil">
+                            <input type="radio" name="perfil" value="organizador" required <?= $perfil === 'organizador' ? 'checked' : '' ?>>
+                            <span class="opcao-perfil__conteudo">
+                                <strong>Organizador</strong>
+                                <small>Criar e gerenciar eventos.</small>
+                            </span>
+                        </label>
+                    </div>
+                </fieldset>
+
                 <div class="campo">
-                    <label for="senha">Senha</label>
+                    <label for="senha">Senha <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                     <input type="password" id="senha" name="senha" autocomplete="new-password" minlength="8" placeholder="Crie uma senha" aria-describedby="senha-ajuda" required>
                     <small id="senha-ajuda" class="ajuda">Use pelo menos 8 caracteres.</small>
                 </div>
 
                 <div class="campo">
-                    <label for="confirmar-senha">Confirmar senha</label>
+                    <label for="confirmar-senha">Confirmar senha <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                     <input type="password" id="confirmar-senha" name="confirmar-senha" autocomplete="new-password" minlength="8" placeholder="Digite sua senha novamente" required>
                 </div>
 
                 <label class="checkbox-linha checkbox-linha--termos" for="termos">
                     <input type="checkbox" id="termos" name="termos" required>
-                    <span>Concordo com os <strong>termos de uso</strong></span>
+                    <span>Concordo com os <strong>termos de uso</strong> <span class="campo-obrigatorio" aria-hidden="true">*</span></span>
                 </label>
 
                 <button type="submit" class="botao">Criar conta</button>

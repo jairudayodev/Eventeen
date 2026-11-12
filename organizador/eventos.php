@@ -24,10 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'SELECT e.id, e.status
                  FROM eventos e
                  WHERE e.id = :evento_id
-                   AND EXISTS (
-                       SELECT 1 FROM evento_organizadores eo
-                       WHERE eo.evento_id = e.id AND eo.usuario_id = :usuario_id
-                   )
+                   AND ' . organizadorEscopoEventoSql('e.id') . '
                  FOR UPDATE'
             );
             $consulta->execute([
@@ -81,10 +78,7 @@ $sql = "SELECT e.*,
              JOIN usuarios u ON u.id = eo.usuario_id
              WHERE eo.evento_id = e.id) AS organizadores
         FROM eventos e
-        WHERE EXISTS (
-            SELECT 1 FROM evento_organizadores eo
-            WHERE eo.evento_id = e.id AND eo.usuario_id = :usuario_id
-        )";
+        WHERE " . organizadorEscopoEventoSql('e.id');
 $parametros = ['usuario_id' => (int) $usuario['id']];
 if ($termo !== '') {
     $sql .= ' AND (e.titulo LIKE :termo_titulo OR e.local LIKE :termo_local)';
@@ -110,7 +104,15 @@ if ($mensagem === null && is_string($resultado) && isset($mensagensResultado[$re
     $mensagem = $mensagensResultado[$resultado];
 }
 
-renderManagementStart($usuario, 'Gerenciar eventos', 'Consulte e administre os eventos sob sua organização.', 'eventos', false);
+renderManagementStart(
+    $usuario,
+    'Gerenciar eventos',
+    $usuario['perfil'] === 'administrador'
+        ? 'Consulte e administre todos os eventos da plataforma.'
+        : 'Consulte e administre os eventos sob sua organização.',
+    'eventos',
+    false
+);
 ?>
 <div class="management-toolbar">
     <form class="management-actions management-event-filters" method="get" action="eventos.php">

@@ -4,6 +4,7 @@ require __DIR__ . '/../config.php';
 require __DIR__ . '/../includes/programacao.php';
 
 $usuarioId = null;
+$administradorId = null;
 $eventoId = null;
 $outroEventoId = null;
 $assertions = 0;
@@ -32,6 +33,13 @@ try {
     $consulta->execute(['email' => $email]);
     $usuarioId = (int) $pdo->lastInsertId();
 
+    $consulta = $pdo->prepare(
+        "INSERT INTO usuarios (nome, email, senha_hash, perfil)
+         VALUES ('Administrador de teste', :email, 'hash-de-teste', 'administrador')"
+    );
+    $consulta->execute(['email' => 'teste-admin-programacao-' . bin2hex(random_bytes(8)) . '@example.invalid']);
+    $administradorId = (int) $pdo->lastInsertId();
+
     $titulo = 'Teste de programação ' . bin2hex(random_bytes(4));
     $consulta = $pdo->prepare(
         "INSERT INTO eventos
@@ -56,11 +64,22 @@ try {
     $consulta = $pdo->prepare('INSERT INTO evento_organizadores (evento_id, usuario_id) VALUES (:evento_id, :usuario_id)');
     $consulta->execute(['evento_id' => $outroEventoId, 'usuario_id' => $usuarioId]);
 
+    $eventosAdmin = array_map('intval', array_column(programacaoEventos($pdo, $administradorId), 'id'));
+    $assert(
+        in_array($eventoId, $eventosAdmin, true) && in_array($outroEventoId, $eventosAdmin, true),
+        'O administrador não recebeu acesso global aos eventos de organização.'
+    );
     salvarEspaco($pdo, $eventoId, $usuarioId, null, 'Sala A', 40, 'Projetor');
     salvarEspaco($pdo, $eventoId, $usuarioId, null, 'Sala B', 120, '');
     $consulta = $pdo->prepare('SELECT id FROM espacos WHERE evento_id = :evento_id ORDER BY id');
     $consulta->execute(['evento_id' => $eventoId]);
     [$salaA, $salaB] = array_map('intval', $consulta->fetchAll(PDO::FETCH_COLUMN));
+    salvarEspaco($pdo, $eventoId, $administradorId, null, 'Sala do administrador', 30, '');
+    $consulta = $pdo->prepare(
+        'SELECT COUNT(*) FROM evento_organizadores WHERE evento_id = :evento_id AND usuario_id = :usuario_id'
+    );
+    $consulta->execute(['evento_id' => $eventoId, 'usuario_id' => $administradorId]);
+    $assert((int) $consulta->fetchColumn() === 0, 'O acesso administrativo não deve exigir vínculo como organizador.');
 
     salvarPalestrante($pdo, $eventoId, $usuarioId, null, 'Palestrante A', '', '');
     salvarPalestrante($pdo, $eventoId, $usuarioId, null, 'Palestrante B', '', '');
@@ -168,5 +187,9 @@ try {
     if ($usuarioId !== null) {
         $consulta = $pdo->prepare('DELETE FROM usuarios WHERE id = :id');
         $consulta->execute(['id' => $usuarioId]);
+    }
+    if ($administradorId !== null) {
+        $consulta = $pdo->prepare('DELETE FROM usuarios WHERE id = :id');
+        $consulta->execute(['id' => $administradorId]);
     }
 }

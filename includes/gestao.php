@@ -14,8 +14,12 @@ function renderManagementStart(array $usuario, string $titulo, string $descricao
         ['mais', 'mais.php', '•••', 'Mais'],
     ];
     $linksAdmin = [
-        ['inicio', 'index.php', '▦', 'Painel'],
-        ['usuarios', 'usuarios.php', '♙', 'Usuários'],
+        ['inicio', '../administrador/index.php', '▦', 'Painel administrativo'],
+        ['eventos', '../organizador/eventos.php', '▣', 'Eventos'],
+        ['presencas', '../organizador/presencas.php', '✓', 'Presenças'],
+        ['mais', '../organizador/mais.php', '•••', 'Ferramentas de gestão'],
+        ['usuarios', '../administrador/usuarios.php', '♙', 'Usuários'],
+        ['participante', '../participante/inicio-participante.php', '◎', 'Área participante'],
     ];
     $links = $isAdmin ? $linksAdmin : $linksOrganizador;
     $tituloPerfil = $isAdmin ? 'Administração' : 'Organização';
@@ -78,7 +82,14 @@ function renderManagementEnd(array $usuario): void
 {
     $isAdmin = ($usuario['perfil'] ?? '') === 'administrador';
     $links = $isAdmin
-        ? [['index.php', '▦', 'Painel'], ['usuarios.php', '♙', 'Usuários']]
+        ? [
+            ['../administrador/index.php', '▦', 'Painel'],
+            ['../organizador/eventos.php', '▣', 'Eventos'],
+            ['../organizador/presencas.php', '✓', 'Presenças'],
+            ['../organizador/mais.php', '•••', 'Mais'],
+            ['../administrador/usuarios.php', '♙', 'Usuários'],
+            ['../participante/inicio-participante.php', '◎', 'Participante'],
+        ]
         : [['index.php', '▦', 'Painel'], ['eventos.php', '▣', 'Eventos'], ['presencas.php', '✓', 'Presenças'], ['mais.php', '•••', 'Mais']];
     $paginaAtual = basename((string) ($_SERVER['SCRIPT_NAME'] ?? ''));
     $paginaAtiva = match ($paginaAtual) {
@@ -87,6 +98,7 @@ function renderManagementEnd(array $usuario): void
         'presencas.php' => 'Presenças',
         'mais.php', 'atividades.php', 'palestrantes.php', 'espacos.php', 'relatorios.php', 'parceiros.php', 'financeiro.php' => 'Mais',
         'usuarios.php', 'usuario-form.php' => 'Usuários',
+        'inicio-participante.php' => 'Participante',
         default => '',
     };
     ?>

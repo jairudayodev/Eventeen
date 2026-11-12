@@ -133,7 +133,7 @@ renderManagementStart(
     <p class="management-notice<?= $erro ? ' management-notice--error' : '' ?>" role="<?= $erro ? 'alert' : 'status' ?>"><?= h($mensagem) ?></p>
 <?php endif; ?>
 <?php if (!$eventos): ?>
-    <p class="management-notice">Cadastre um evento e vincule seu usuário como organizador para registrar presenças.</p>
+    <p class="management-notice">Cadastre um evento para registrar presenças.</p>
 <?php else: ?>
     <form class="management-toolbar" method="get" action="presencas.php">
         <label class="management-muted" for="evento-presencas">Evento</label>

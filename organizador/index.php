@@ -14,7 +14,7 @@ $consulta = $pdo->prepare(
         COALESCE(SUM(CASE WHEN e.status = 'publicado' AND e.data_fim >= NOW() THEN
             (SELECT COUNT(*) FROM inscricoes i WHERE i.evento_id = e.id AND i.status = 'ativa') ELSE 0 END), 0) AS inscricoes_abertas
      FROM eventos e
-     JOIN evento_organizadores eo ON eo.evento_id = e.id AND eo.usuario_id = :usuario_id"
+     WHERE " . organizadorEscopoEventoSql('e.id')
 );
 $consulta->execute(['usuario_id' => $organizadorId]);
 $resumo = $consulta->fetch();
@@ -25,7 +25,7 @@ $ocupacao = (int) $resumo['vagas_abertas'] > 0
 $consulta = $pdo->prepare(
     "SELECT COUNT(*)
      FROM presencas_atividades pa
-     JOIN evento_organizadores eo ON eo.evento_id = pa.evento_id AND eo.usuario_id = :usuario_id"
+     WHERE " . organizadorEscopoEventoSql('pa.evento_id')
 );
 $consulta->execute(['usuario_id' => $organizadorId]);
 $presencas = (int) $consulta->fetchColumn();
@@ -34,15 +34,22 @@ $consulta = $pdo->prepare(
     "SELECT e.id, e.titulo, e.local, e.data_inicio, e.status, e.capacidade,
             (SELECT COUNT(*) FROM inscricoes i WHERE i.evento_id = e.id AND i.status = 'ativa') AS inscritos
      FROM eventos e
-     JOIN evento_organizadores eo ON eo.evento_id = e.id AND eo.usuario_id = :usuario_id
-     WHERE e.status IN ('rascunho', 'publicado') AND e.data_fim >= NOW()
+     WHERE " . organizadorEscopoEventoSql('e.id') . "
+       AND e.status IN ('rascunho', 'publicado') AND e.data_fim >= NOW()
      ORDER BY e.data_inicio, e.id
      LIMIT 4"
 );
 $consulta->execute(['usuario_id' => $organizadorId]);
 $proximos = $consulta->fetchAll();
 
-renderManagementStart($usuario, 'Painel do organizador', 'Acompanhe seus eventos, inscrições e presenças.', 'inicio');
+renderManagementStart(
+    $usuario,
+    $usuario['perfil'] === 'administrador' ? 'Painel de eventos' : 'Painel do organizador',
+    $usuario['perfil'] === 'administrador'
+        ? 'Acompanhe os eventos, inscrições e presenças da plataforma.'
+        : 'Acompanhe seus eventos, inscrições e presenças.',
+    'inicio'
+);
 ?>
 <section class="management-kpis" aria-label="Resumo do organizador">
     <?php managementKpi((string) $resumo['publicados'], 'Eventos publicados em andamento', '▣'); ?>

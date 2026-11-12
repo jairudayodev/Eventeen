@@ -7,10 +7,7 @@ function programacaoEventos(PDO $pdo, int $usuarioId): array
     $consulta = $pdo->prepare(
         'SELECT e.id, e.titulo, e.data_inicio, e.data_fim, e.capacidade
          FROM eventos e
-         WHERE EXISTS (
-             SELECT 1 FROM evento_organizadores eo
-             WHERE eo.evento_id = e.id AND eo.usuario_id = :usuario_id
-         )
+         WHERE ' . organizadorEscopoEventoSql('e.id') . '
          ORDER BY e.data_inicio DESC, e.id DESC'
     );
     $consulta->execute(['usuario_id' => $usuarioId]);
@@ -66,10 +63,7 @@ function programacaoTransacao(PDO $pdo, int $eventoId, int $usuarioId, callable 
             'SELECT e.id, e.data_inicio, e.data_fim, e.capacidade
              FROM eventos e
              WHERE e.id = :evento_id
-               AND EXISTS (
-                   SELECT 1 FROM evento_organizadores eo
-                   WHERE eo.evento_id = e.id AND eo.usuario_id = :usuario_id
-               )
+               AND ' . organizadorEscopoEventoSql('e.id') . '
              FOR UPDATE'
         );
         $consulta->execute(['evento_id' => $eventoId, 'usuario_id' => $usuarioId]);

@@ -28,7 +28,7 @@ try {
     $inserirUsuario = $pdo->prepare(
         "INSERT INTO usuarios (nome, email, senha_hash, perfil) VALUES (:nome, :email, 'hash-de-teste', :perfil)"
     );
-    foreach (['organizador' => 'organizador', 'intruso' => 'organizador', 'p1' => 'participante', 'p2' => 'participante', 'p3' => 'participante'] as $chave => $perfil) {
+    foreach (['organizador' => 'organizador', 'intruso' => 'organizador', 'admin' => 'administrador', 'p1' => 'participante', 'p2' => 'participante', 'p3' => 'participante'] as $chave => $perfil) {
         $inserirUsuario->execute(['nome' => 'Usuário ' . $chave, 'email' => "pagamentos-{$chave}-{$nonce}@example.invalid", 'perfil' => $perfil]);
         $usuarios[$chave] = (int) $pdo->lastInsertId();
     }
@@ -72,7 +72,7 @@ try {
     $assert($resumo['saldo_centavos'] === 5000, 'O saldo deveria considerar apenas o pagamento confirmado.');
     $assert((float) $resumo['inscricoes_pendentes'] === 50.0, 'O pagamento pendente não foi totalizado.');
 
-    atualizarPagamentoInscricao($pdo, $org, $pagamentoPendente, 'confirmar', $hoje);
+    atualizarPagamentoInscricao($pdo, $usuarios['admin'], $pagamentoPendente, 'confirmar', $hoje);
     $assert(resumoFinanceiroEvento($pdo, $eventoPago)['saldo_centavos'] === 10000, 'A confirmação não atualizou o saldo.');
 
     // Estorno em até 7 dias após o pagamento.
@@ -102,9 +102,9 @@ try {
     $consulta->execute(['id' => $material]);
     $linha = $consulta->fetch();
     $assert($linha['tipo_apoio'] === 'material' && $linha['valor'] === null && $linha['descricao_apoio'] === '100 camisetas', 'O apoio material não foi gravado corretamente.');
-    atualizarStatusPatrocinio($pdo, $material, $org, 'confirmado');
+    atualizarStatusPatrocinio($pdo, $material, $usuarios['admin'], 'confirmado');
     $esperarRejeicao(
-        static fn () => salvarLancamentoFinanceiro($pdo, $org, 'Pagamento indevido', 'entrada', 1000, $hoje, 'realizado', $eventoPago, [], $material),
+        static fn () => salvarLancamentoFinanceiro($pdo, $usuarios['admin'], 'Pagamento indevido', 'entrada', 1000, $hoje, 'realizado', $eventoPago, [], $material),
         'deve ser financeiro'
     );
 
