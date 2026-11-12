@@ -92,6 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </form>
 
             <p class="rodape">Ainda não tem conta? <a href="cadastro.php">Criar conta</a></p>
+            <p class="rodape">Recebeu um certificado? <a href="validar-certificado.php">Validar certificado</a></p>
         </section>
 
         <footer class="assinatura">Fatec Ourinhos</footer>

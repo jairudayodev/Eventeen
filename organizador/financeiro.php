@@ -157,14 +157,8 @@ $rotulosPagamento = ['pendente' => 'Pendente', 'confirmado' => 'Confirmado', 'es
 <?php if (!$eventos): ?>
     <p class="management-notice">Cadastre um evento e vincule seu usuário como organizador para registrar movimentações financeiras.</p>
 <?php else: ?>
-    <form class="management-toolbar" method="get" action="financeiro.php">
-        <label class="management-muted" for="evento-financeiro">Evento</label>
-        <select id="evento-financeiro" class="management-select" name="evento_id">
-            <?php foreach ($eventos as $evento): ?>
-                <option value="<?= (int) $evento['id'] ?>"<?= (int) $evento['id'] === $eventoId ? ' selected' : '' ?>><?= h($evento['titulo']) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <button class="management-button management-button--secondary" type="submit">Ver saldo</button>
+    <form class="management-toolbar management-event-picker" method="get" action="financeiro.php">
+        <?php managementEventPicker($eventos, $eventoId, 'Ver saldo'); ?>
     </form>
 
     <section class="management-kpis" aria-label="Resumo financeiro do evento">
@@ -239,7 +233,7 @@ $rotulosPagamento = ['pendente' => 'Pendente', 'confirmado' => 'Confirmado', 'es
                                             <?php if ($pagamento['pagamento_status'] === 'pendente'): ?>
                                                 <button class="management-button management-button--secondary" name="operacao" value="confirmar" type="submit">Confirmar pagamento</button>
                                             <?php else: ?>
-                                                <button class="management-button management-button--secondary" name="operacao" value="estornar" type="submit">Estornar</button>
+                                                <button class="management-button management-button--secondary" name="operacao" value="estornar" type="submit" onclick="return confirm('Estornar este pagamento? O valor deixará de compor o saldo do evento.');">Estornar</button>
                                             <?php endif; ?>
                                         </form>
                                     <?php else: ?>—<?php endif; ?>
@@ -283,8 +277,8 @@ $rotulosPagamento = ['pendente' => 'Pendente', 'confirmado' => 'Confirmado', 'es
                     <option value="realizado">Realizado</option>
                 </select>
             </div>
-            <div class="management-field management-field--full">
-                <label for="patrocinio-lancamento">Vincular a patrocínio financeiro confirmado <span class="management-muted">(opcional, apenas entradas)</span></label>
+            <div class="management-field management-field--full" data-somente="entrada">
+                <label for="patrocinio-lancamento">Vincular a patrocínio financeiro confirmado <span class="management-muted">(opcional)</span></label>
                 <select class="management-select" id="patrocinio-lancamento" name="patrocinio_id">
                     <option value="">Não vincular</option>
                     <?php foreach ($patrocinios as $patrocinio): ?>
@@ -293,21 +287,25 @@ $rotulosPagamento = ['pendente' => 'Pendente', 'confirmado' => 'Confirmado', 'es
                 </select>
             </div>
         </div>
-        <p class="management-muted">Entradas ficam vinculadas somente ao evento selecionado. Despesas sem rateio também são atribuídas a ele; para dividir uma despesa, preencha os valores por evento abaixo. A soma deve corresponder ao valor total.</p>
-        <div class="management-rows">
-            <?php foreach ($eventos as $evento): ?>
-                <div class="management-row">
-                    <div class="management-row__main">
-                        <strong><?= h($evento['titulo']) ?></strong>
-                        <span>Valor da despesa atribuído a este evento (opcional)</span>
+        <p class="management-muted" data-somente="entrada">A entrada fica vinculada somente a este evento.</p>
+        <details class="management-rateio" data-somente="despesa">
+            <summary>Dividir esta despesa entre vários eventos (opcional)</summary>
+            <p class="management-muted">Sem rateio, a despesa inteira é atribuída a este evento. Para dividir, informe o valor de cada evento; a soma deve ser igual ao valor total.</p>
+            <div class="management-rows">
+                <?php foreach ($eventos as $evento): ?>
+                    <div class="management-row">
+                        <div class="management-row__main">
+                            <strong><?= h($evento['titulo']) ?></strong>
+                            <span><?= h(date('d/m/Y', strtotime((string) $evento['data_inicio']))) ?></span>
+                        </div>
+                        <label class="management-field management-rateio__valor">
+                            <span class="management-muted">R$</span>
+                            <input class="management-input" name="rateios[<?= (int) $evento['id'] ?>]" inputmode="decimal" aria-label="Valor rateado para <?= h($evento['titulo']) ?>" placeholder="0,00">
+                        </label>
                     </div>
-                    <label class="management-field">
-                        <span class="management-muted">R$</span>
-                        <input class="management-input" name="rateios[<?= (int) $evento['id'] ?>]" inputmode="decimal" aria-label="Valor rateado para <?= h($evento['titulo']) ?>" placeholder="0,00">
-                    </label>
-                </div>
-            <?php endforeach; ?>
-        </div>
+                <?php endforeach; ?>
+            </div>
+        </details>
         <input type="hidden" name="evento_id" value="<?= $eventoId ?>">
         <div class="management-actions management-actions--spaced">
             <button class="management-button" type="submit">Registrar lançamento</button>
@@ -343,7 +341,7 @@ $rotulosPagamento = ['pendente' => 'Pendente', 'confirmado' => 'Confirmado', 'es
                                             <input type="hidden" name="lancamento_id" value="<?= (int) $lancamento['id'] ?>">
                                             <input type="hidden" name="acao" value="status">
                                             <button class="management-button management-button--secondary" name="status" value="realizado" type="submit">Confirmar</button>
-                                            <button class="management-button management-button--secondary" name="status" value="cancelado" type="submit">Cancelar</button>
+                                            <button class="management-button management-button--secondary" name="status" value="cancelado" type="submit" onclick="return confirm('Cancelar este lançamento? Esta ação não pode ser desfeita.');">Cancelar</button>
                                         </form>
                                     <?php else: ?>—<?php endif; ?>
                                 </td>
@@ -355,4 +353,23 @@ $rotulosPagamento = ['pendente' => 'Pendente', 'confirmado' => 'Confirmado', 'es
         <?php endif; ?>
     </section>
 <?php endif; ?>
+<script>
+    (function () {
+        var tipo = document.getElementById('tipo-lancamento');
+        if (!tipo) {
+            return;
+        }
+        function atualizar() {
+            document.querySelectorAll('[data-somente]').forEach(function (bloco) {
+                var visivel = bloco.getAttribute('data-somente') === tipo.value;
+                bloco.hidden = !visivel;
+                bloco.querySelectorAll('input, select').forEach(function (campo) {
+                    campo.disabled = !visivel;
+                });
+            });
+        }
+        tipo.addEventListener('change', atualizar);
+        atualizar();
+    }());
+</script>
 <?php renderManagementEnd($usuario); ?>

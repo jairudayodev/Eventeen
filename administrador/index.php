@@ -39,12 +39,29 @@ renderManagementStart($usuario, 'Painel administrativo', 'Visão geral da plataf
         </div>
     </section>
     <section class="management-panel">
-        <div class="management-panel__heading"><h2>Ferramentas administrativas</h2></div>
-        <a class="management-feature" href="usuarios.php">
-            <span class="management-feature__icon">♙</span>
-            <strong>Usuários e permissões</strong>
-            <span>Consulte contas, atualize dados e conceda ou revogue os perfis de organizador e administrador.</span>
-        </a>
+        <div class="management-panel__heading"><h2>Acesso rápido</h2><a href="../organizador/mais.php">Todas as ferramentas</a></div>
+        <div class="management-feature-grid management-feature-grid--quick">
+            <a class="management-feature" href="usuarios.php">
+                <span class="management-feature__icon" aria-hidden="true">♙</span>
+                <strong>Usuários e perfis</strong>
+                <span>Conceda ou revogue os perfis de organizador e administrador.</span>
+            </a>
+            <a class="management-feature" href="../organizador/eventos.php">
+                <span class="management-feature__icon" aria-hidden="true">▣</span>
+                <strong>Todos os eventos</strong>
+                <span>Edite, publique, cancele ou encerre qualquer evento.</span>
+            </a>
+            <a class="management-feature" href="../organizador/relatorios.php">
+                <span class="management-feature__icon" aria-hidden="true">▥</span>
+                <strong>Relatórios</strong>
+                <span>Inscrições e presenças da plataforma.</span>
+            </a>
+            <a class="management-feature" href="../participante/inicio-participante.php">
+                <span class="management-feature__icon" aria-hidden="true">◎</span>
+                <strong>Área do participante</strong>
+                <span>Veja o sistema como os participantes veem.</span>
+            </a>
+        </div>
     </section>
 </div>
 <?php renderManagementEnd($usuario); ?>

@@ -48,7 +48,7 @@ $proximosEventos = $consulta->fetchAll();
 <body class="app-body">
     <div class="app-shell">
         <?php appHeader($usuario); ?>
-        <main class="app-content">
+        <main class="app-content" id="conteudo">
             <header class="app-header">
                 <h1>Olá, <?= h(explode(' ', displayName($usuario))[0]) ?>!</h1>
                 <p class="app-header__subtitle">Seu próximo encontro começa aqui.</p>
@@ -77,7 +77,7 @@ $proximosEventos = $consulta->fetchAll();
                             <div class="app-event-card__art" aria-hidden="true">🗓️</div>
                             <div class="app-event-card__meta">
                                 <h3 class="app-event-card__title"><?= h($evento['titulo']) ?></h3>
-                                <div class="app-event-card__details"><span>📅 <?= h(formatDateTime($evento['data_inicio'])) ?></span></div>
+                                <div class="app-event-card__details"><span>📅 <?= h(formatPeriodo($evento['data_inicio'], $evento['data_fim'])) ?></span></div>
                                 <div class="app-event-card__details"><span>📍 <?= h($evento['local']) ?></span></div>
                                 <span class="app-event-card__status">✓ Inscrição confirmada</span>
                             </div>

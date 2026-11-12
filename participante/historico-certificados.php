@@ -27,7 +27,7 @@ $totalCertificados = count(array_filter($atividadesHistorico, static fn (array $
 <body class="app-body">
     <div class="app-shell app-shell--compact">
         <?php appHeader($usuario); ?>
-        <main class="app-content">
+        <main class="app-content" id="conteudo">
             <header class="app-header">
                 <h1>Histórico de participação</h1>
                 <p class="app-header__subtitle">Fatec Ourinhos</p>

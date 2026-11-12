@@ -49,6 +49,7 @@ A partir daí, o administrador concede ou revoga os perfis de organizador e admi
 | Histórico e certificados | Histórico de eventos e atividades do participante; emissão de certificado em PDF por presença em atividade concluída, com código único e página pública de validação (`validar-certificado.php`). |
 | Relatórios | Inscrições confirmadas e canceladas, participantes presentes (distintos) e taxa de presença por evento; presenças por atividade; filtros por evento e período; impressão. |
 | Parceiros e finanças | Parceiros; patrocínios financeiros, materiais ou institucionais; pagamentos de patrocínio até o valor acordado; pagamentos de inscrição (um por inscrição, confirmação com data e estorno em até 7 dias); entradas e despesas com rateio entre eventos; saldo por evento. |
+| Interface e navegação | Menu de gestão agrupado (Eventos, Programação, Financeiro e, para administradores, Administração e Área do participante); atalhos de programação e presenças em cada evento; seletor de evento padronizado; registro de presença em lote com filtro por nome; confirmação antes de ações irreversíveis; marcação de campos obrigatórios; link "Pular para o conteúdo" e foco visível; telas utilizáveis de 360 a 1366 pixels. Administradores navegam pela área do participante com atalho de volta à administração. |
 
 ## Organização do código
 

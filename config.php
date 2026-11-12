@@ -181,22 +181,63 @@ function formatDateTime(string $dateTime): string
     return date('d/m/Y \\à\\s H\\hi', strtotime($dateTime));
 }
 
+function formatPeriodo(string $inicio, string $fim): string
+{
+    $i = strtotime($inicio);
+    $f = strtotime($fim);
+    if (date('Y-m-d', $i) === date('Y-m-d', $f)) {
+        return date('d/m/Y', $i) . ' · ' . date('H\hi', $i) . '–' . date('H\hi', $f);
+    }
+
+    return date('d/m/Y H\hi', $i) . ' até ' . date('d/m/Y H\hi', $f);
+}
+
+/**
+ * Indica se a página atual pertence à área do participante (pasta participante/ ou atalhos da raiz).
+ */
+function paginaDaAreaParticipante(): bool
+{
+    $script = basename(str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? '')));
+
+    return basename(applicationScriptDirectory()) === 'participante'
+        || in_array($script, [
+            'inicio-participante.php', 'eventos.php', 'detalhes-evento.php', 'minhas-inscricoes.php',
+            'cancelar-inscricao.php', 'historico-certificados.php', 'certificado.php',
+        ], true);
+}
+
 function appHeader(array $usuario): void
 {
-    $paginaInicial = profileHomePath(isset($usuario['perfil']) ? (string) $usuario['perfil'] : null);
+    $perfil = (string) ($usuario['perfil'] ?? 'participante');
     $prefixo = applicationRootPrefix();
+    $areaParticipante = paginaDaAreaParticipante();
+    // O logo leva ao início da área exibida; fora dela, ao início do perfil do usuário.
+    $paginaInicial = $prefixo . ($areaParticipante ? 'inicio-participante.php' : profileHomePath($perfil));
+    $voltarGestao = $perfil !== 'participante'
+        ? [$prefixo . profileHomePath($perfil), $perfil === 'administrador' ? 'Voltar à administração' : 'Voltar à organização']
+        : null;
     ?>
+    <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
     <header class="app-topbar">
-        <a class="app-brand" href="<?= h($paginaInicial) ?>" aria-label="Página inicial Eventeen">
-            <span class="app-brand__mark">E</span>
+        <a class="app-brand" href="<?= h($paginaInicial) ?>" aria-label="Eventeen - página inicial">
+            <span class="app-brand__mark" aria-hidden="true">E</span>
             <span class="app-brand__name">Eventeen</span>
         </a>
         <div class="app-topbar__actions">
-            <span class="app-pill"><?= h(initials(displayName($usuario))) ?></span>
-            <a class="app-menu" href="<?= h($prefixo) ?>configuracoes-conta.php" aria-label="Configurações da conta" title="Configurações">⚙</a>
+            <?php if ($voltarGestao !== null): ?>
+                <a class="app-topbar__link app-topbar__link--destaque" href="<?= h($voltarGestao[0]) ?>" title="<?= h($voltarGestao[1]) ?>">
+                    <span aria-hidden="true">←</span><span class="app-topbar__text"><?= h($voltarGestao[1]) ?></span>
+                </a>
+            <?php endif; ?>
+            <span class="app-pill" title="<?= h(displayName($usuario)) ?>" aria-hidden="true"><?= h(initials(displayName($usuario))) ?></span>
+            <a class="app-topbar__link" href="<?= h($prefixo) ?>configuracoes-conta.php" title="Minha conta">
+                <span aria-hidden="true">⚙</span><span class="app-topbar__text">Minha conta</span>
+            </a>
             <form class="app-logout-form" method="post" action="<?= h($prefixo) ?>sair.php">
                 <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
-                <button class="app-menu app-logout-button" type="submit" aria-label="Sair da conta" title="Sair">↪</button>
+                <button class="app-topbar__link app-logout-button" type="submit" title="Sair da conta">
+                    <span aria-hidden="true">↪</span><span class="app-topbar__text">Sair</span>
+                </button>
             </form>
         </div>
     </header>
@@ -209,13 +250,13 @@ function appNavigation(string $active): void
         'inicio' => ['inicio-participante.php', '⌂', 'Início'],
         'eventos' => ['eventos.php', '🗓️', 'Eventos'],
         'inscricoes' => ['minhas-inscricoes.php', '🧾', 'Inscrições'],
-        'historico' => ['historico-certificados.php', '⏱️', 'Histórico'],
+        'historico' => ['historico-certificados.php', '🎓', 'Histórico'],
     ];
     ?>
     <nav class="app-bottom-nav" aria-label="Navegação principal">
         <?php foreach ($items as $key => [$url, $icon, $label]): ?>
-            <a class="app-nav-item<?= $active === $key ? ' app-nav-item--active' : '' ?>" href="<?= h($url) ?>">
-                <span class="app-nav-item__icon"><?= h($icon) ?></span>
+            <a class="app-nav-item<?= $active === $key ? ' app-nav-item--active' : '' ?>" href="<?= h($url) ?>"<?= $active === $key ? ' aria-current="page"' : '' ?>>
+                <span class="app-nav-item__icon" aria-hidden="true"><?= h($icon) ?></span>
                 <span><?= h($label) ?></span>
             </a>
         <?php endforeach; ?>
@@ -229,6 +270,6 @@ function renderNotice(?string $message, bool $isError = false): void
         return;
     }
     ?>
-    <p class="app-notice<?= $isError ? ' app-notice--error' : '' ?>" role="status"><?= h($message) ?></p>
+    <p class="app-notice<?= $isError ? ' app-notice--error' : '' ?>" role="<?= $isError ? 'alert' : 'status' ?>"><?= h($message) ?></p>
     <?php
 }

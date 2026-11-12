@@ -310,6 +310,7 @@ renderManagementStart(
         <h2>Informações do evento</h2>
         <span class="management-badge <?= h($statusClasses[$statusExibicao] ?? '') ?>"><?= h($statusRotulos[$statusExibicao] ?? $statusExibicao) ?></span>
     </div>
+    <p class="management-required-note">Campos marcados com <strong>*</strong> são obrigatórios.</p>
     <div class="management-form-grid">
         <div class="management-field management-field--full">
             <label for="titulo-evento">Nome do evento</label>

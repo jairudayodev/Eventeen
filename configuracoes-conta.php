@@ -114,7 +114,7 @@ $prefixo = applicationRootPrefix();
 <body class="app-body">
     <div class="app-shell app-shell--compact">
         <?php appHeader($usuario); ?>
-        <main class="app-content">
+        <main class="app-content" id="conteudo">
             <header class="app-header">
                 <h1>Configurações da conta</h1>
                 <p class="app-header__subtitle">Atualize seus dados pessoais e sua senha.</p>

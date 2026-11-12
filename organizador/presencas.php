@@ -27,8 +27,21 @@ try {
             throw new DomainException('Selecione um evento antes de registrar presenças.');
         }
         $atividadeId = programacaoId($_POST['atividade_id'] ?? null);
-        $participanteId = programacaoId($_POST['participante_id'] ?? null);
         $acao = programacaoTexto($_POST['acao'] ?? null, 'ação');
+        if ($acao === 'registrar_lote') {
+            $selecionados = $_POST['participantes'] ?? [];
+            if (!is_array($selecionados) || $selecionados === []) {
+                throw new DomainException('Selecione ao menos um participante para registrar a presença.');
+            }
+            $quantidade = 0;
+            foreach (array_unique($selecionados) as $selecionado) {
+                registrarPresencaAtividade($pdo, $eventoId, $organizadorId, $atividadeId, programacaoId($selecionado), true);
+                $quantidade++;
+            }
+            header('Location: presencas.php?evento_id=' . $eventoId . '&atividade_id=' . $atividadeId . '&resultado=lote&quantidade=' . $quantidade);
+            exit;
+        }
+        $participanteId = programacaoId($_POST['participante_id'] ?? null);
         if (!in_array($acao, ['registrar', 'remover'], true)) {
             throw new DomainException('A ação solicitada não é válida.');
         }
@@ -119,6 +132,9 @@ if ($mensagem === null && $resultado === 'registrar') {
     $mensagem = 'Presença da atividade confirmada.';
 } elseif ($mensagem === null && $resultado === 'remover') {
     $mensagem = 'Confirmação de presença removida.';
+} elseif ($mensagem === null && $resultado === 'lote') {
+    $quantidade = max(0, (int) ($_GET['quantidade'] ?? 0));
+    $mensagem = $quantidade === 1 ? 'Presença registrada para 1 participante.' : "Presença registrada para {$quantidade} participantes.";
 }
 
 renderManagementStart(
@@ -135,14 +151,8 @@ renderManagementStart(
 <?php if (!$eventos): ?>
     <p class="management-notice">Cadastre um evento para registrar presenças.</p>
 <?php else: ?>
-    <form class="management-toolbar" method="get" action="presencas.php">
-        <label class="management-muted" for="evento-presencas">Evento</label>
-        <select id="evento-presencas" class="management-select" name="evento_id">
-            <?php foreach ($eventos as $evento): ?>
-                <option value="<?= (int) $evento['id'] ?>"<?= (int) $evento['id'] === $eventoId ? ' selected' : '' ?>><?= h($evento['titulo']) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <button class="management-button management-button--secondary" type="submit">Abrir evento</button>
+    <form class="management-toolbar management-event-picker" method="get" action="presencas.php">
+        <?php managementEventPicker($eventos, $eventoId, 'Abrir'); ?>
     </form>
 
     <?php if ($eventoAtual !== null): ?>
@@ -177,17 +187,17 @@ renderManagementStart(
                 </table>
             </div>
         <?php else: ?>
-            <form class="management-toolbar" method="get" action="presencas.php">
+            <form class="management-toolbar management-event-picker" method="get" action="presencas.php">
                 <input type="hidden" name="evento_id" value="<?= $eventoId ?>">
-                <label class="management-muted" for="atividade-presencas">Atividade</label>
-                <select id="atividade-presencas" class="management-select" name="atividade_id">
+                <label class="management-event-picker__label" for="atividade-presencas">Atividade</label>
+                <select id="atividade-presencas" class="management-select management-event-picker__select" name="atividade_id">
                     <?php foreach ($atividades as $atividade): ?>
                         <option value="<?= (int) $atividade['id'] ?>"<?= (int) $atividade['id'] === $atividadeId ? ' selected' : '' ?>>
-                            <?= h($atividade['titulo']) ?> · <?= h(date('d/m/Y H:i', strtotime($atividade['inicio']))) ?>
+                            <?= h($atividade['titulo']) ?> · <?= h(date('d/m/Y H\hi', strtotime($atividade['inicio']))) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
-                <button class="management-button management-button--secondary" type="submit">Abrir atividade</button>
+                <button class="management-button management-button--secondary" type="submit">Abrir</button>
             </form>
         <?php endif; ?>
 
@@ -204,15 +214,33 @@ renderManagementStart(
                 <?php managementKpi((string) $pendentes, 'Aguardando confirmação', '◷'); ?>
                 <?php managementKpi($taxaPresenca, 'Taxa de presença', '◉'); ?>
             </section>
+            <?php if ($pendentes > 0): ?>
+                <form id="presenca-lote" class="management-toolbar management-event-picker" method="post" action="presencas.php">
+                    <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
+                    <input type="hidden" name="evento_id" value="<?= $eventoId ?>">
+                    <input type="hidden" name="atividade_id" value="<?= (int) $atividadeSelecionada['id'] ?>">
+                    <input type="hidden" name="acao" value="registrar_lote">
+                    <label class="management-check-all"><input type="checkbox" id="marcar-todos"> Selecionar todos os pendentes</label>
+                    <input class="management-search" type="search" id="filtro-participantes" placeholder="Filtrar por nome ou e-mail" aria-label="Filtrar participantes">
+                    <button class="management-button" type="submit">Registrar presença dos selecionados</button>
+                </form>
+            <?php endif; ?>
             <div class="management-table-wrap">
-                <table class="management-table">
-                    <thead><tr><th>Participante</th><th>E-mail</th><th>Inscrição</th><th>Presença na atividade</th><th>Ação</th></tr></thead>
+                <table class="management-table" id="tabela-presencas">
+                    <thead><tr><th>Selecionar</th><th>Participante</th><th>E-mail</th><th>Inscrição</th><th>Presença na atividade</th><th>Ação</th></tr></thead>
                     <tbody>
                         <?php if (!$participantes): ?>
-                            <tr><td colspan="5">Nenhuma inscrição Confirmada para este evento.</td></tr>
+                            <tr><td colspan="6">Nenhuma inscrição Confirmada para este evento.</td></tr>
                         <?php endif; ?>
                         <?php foreach ($participantes as $participante): ?>
-                            <tr>
+                            <tr data-busca="<?= h(mb_strtolower($participante['nome'] . ' ' . $participante['email'], 'UTF-8')) ?>">
+                                <td data-label="Selecionar">
+                                    <?php if ($participante['confirmado_em'] === null): ?>
+                                        <input type="checkbox" class="presenca-pendente" name="participantes[]" value="<?= (int) $participante['usuario_id'] ?>" form="presenca-lote" aria-label="Selecionar <?= h($participante['nome']) ?>">
+                                    <?php else: ?>
+                                        <span class="management-muted">—</span>
+                                    <?php endif; ?>
+                                </td>
                                 <td data-label="Participante"><strong><?= h($participante['nome']) ?></strong></td>
                                 <td data-label="E-mail"><?= h($participante['email']) ?></td>
                                 <td data-label="Inscrição"><span class="management-badge">Confirmada</span></td>
@@ -225,7 +253,7 @@ renderManagementStart(
                                     <?php endif; ?>
                                 </td>
                                 <td data-label="Ação">
-                                    <form method="post" action="presencas.php">
+                                    <form method="post" action="presencas.php"<?= $participante['confirmado_em'] !== null ? ' data-confirmar="Remover a presença deste participante na atividade?"' : '' ?>>
                                         <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                                         <input type="hidden" name="evento_id" value="<?= $eventoId ?>">
                                         <input type="hidden" name="atividade_id" value="<?= (int) $atividadeSelecionada['id'] ?>">
@@ -247,4 +275,36 @@ renderManagementStart(
         <?php endif; ?>
     <?php endif; ?>
 <?php endif; ?>
+<script>
+    (function () {
+        var todos = document.getElementById('marcar-todos');
+        var filtro = document.getElementById('filtro-participantes');
+        var linhas = document.querySelectorAll('#tabela-presencas tbody tr[data-busca]');
+        if (todos) {
+            todos.addEventListener('change', function () {
+                linhas.forEach(function (linha) {
+                    var caixa = linha.querySelector('.presenca-pendente');
+                    if (caixa && !linha.hidden) {
+                        caixa.checked = todos.checked;
+                    }
+                });
+            });
+        }
+        if (filtro) {
+            filtro.addEventListener('input', function () {
+                var termo = filtro.value.trim().toLowerCase();
+                linhas.forEach(function (linha) {
+                    linha.hidden = termo !== '' && linha.getAttribute('data-busca').indexOf(termo) === -1;
+                });
+            });
+        }
+        document.querySelectorAll('form[data-confirmar]').forEach(function (formulario) {
+            formulario.addEventListener('submit', function (evento) {
+                if (!window.confirm(formulario.getAttribute('data-confirmar'))) {
+                    evento.preventDefault();
+                }
+            });
+        });
+    }());
+</script>
 <?php renderManagementEnd($usuario); ?>

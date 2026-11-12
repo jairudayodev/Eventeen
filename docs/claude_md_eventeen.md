@@ -270,11 +270,13 @@ Não escolher stack por conta própria: sugerir opções apenas quando pedido e 
 | ID | Data | Decisão | Motivo / fonte | Afeta |
 | :---- | :---- | :---- | :---- | :---- |
 | D-01 | 2026-09-23 | Criado este CLAUDE.md como guia central do projeto | Solicitação do usuário | Todo o projeto |
-| D-02 | 2026-11-11 | Administrador é um perfil de acesso distinto (USUARIOS.perfil), dedicado a usuários e permissões | Implementação de RF03 | RN06, UC01, MR |
+| D-02 | 2026-11-11 | Administrador é um perfil de acesso distinto (USUARIOS.perfil), dedicado a usuários e permissões — **substituída por D-07** | Implementação de RF03 | RN06, UC01, MR |
 | D-03 | 2026-11-11 | Atividades, espaços e palestrantes pertencem a um único evento (modelo físico V3) | Simplificação da implementação | RN10, MR, dicionário |
 | D-04 | 2026-11-11 | Cancelamento de inscrição até 24 h antes do início e sem presença registrada | RN11 / CA-RF08 | Inscrições |
 | D-05 | 2026-11-11 | Certificados em PDF por presença em atividade concluída, com código de validação público | RF17 | Certificados |
 | D-06 | 2026-11-11 | Pagamentos de inscrição registrados pelo organizador (um por inscrição, estorno em até 7 dias) e tipos de apoio financeiro/material/institucional | RF18, RF19, RN12, RN13 | Financeiro |
+| D-07 | 2026-11-11 | Administrador tem acesso total (usuários, todos os eventos e área do participante); cadastro público permite escolher participante ou organizador | Decisão da equipe (commit 96546ef) | RN06, RN15, RF01, UC01 |
+| D-08 | 2026-11-12 | Revisão de usabilidade: menu de gestão agrupado, atalhos por evento, presença em lote, confirmações, campos obrigatórios marcados e correção do link do logotipo | RNF05, RNF06 e defeito de navegação | Interface, seção 5.4 |
 |  |  |  |  |  |
 
 ---
@@ -306,4 +308,5 @@ Não escolher stack por conta própria: sugerir opções apenas quando pedido e 
 | :---- | :---- |
 | 2026-09-23 | Versão inicial, a partir do TEMPLATE de ES II, do Documento de Visão v1.0 e do Estudo de Caso 1 – BD |
 | 2026-11-11 | Stack, comandos e decisões D-02 a D-06 registrados após a revisão do código e da Documentação do Desenvolvimento |
+| 2026-11-12 | Decisões D-07 e D-08 registradas (perfis de acesso e revisão de interface) |
 

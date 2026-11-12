@@ -20,7 +20,7 @@ renderManagementStart($usuario, 'Relatórios', 'Inscrições por evento e presen
         <select id="evento-relatorio" class="management-select" name="evento_id" aria-label="Evento">
             <option value="">Todos os eventos</option>
             <?php foreach ($todosEventos as $evento): ?>
-                <option value="<?= (int) $evento['id'] ?>"<?= $filtros['evento_id'] === (int) $evento['id'] ? ' selected' : '' ?>><?= h($evento['titulo']) ?></option>
+                <option value="<?= (int) $evento['id'] ?>"<?= $filtros['evento_id'] === (int) $evento['id'] ? ' selected' : '' ?>><?= h(managementRotuloEvento($evento)) ?></option>
             <?php endforeach; ?>
         </select>
         <label class="management-muted" for="relatorio-de">De</label>

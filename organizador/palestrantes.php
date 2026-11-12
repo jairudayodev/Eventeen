@@ -124,14 +124,8 @@ renderManagementStart($usuario, 'Palestrantes', 'Cadastre os convidados e associ
     <p class="management-notice<?= $erro ? ' management-notice--error' : '' ?>" role="<?= $erro ? 'alert' : 'status' ?>"><?= h($mensagem) ?></p>
 <?php endif; ?>
 <?php if ($eventos): ?>
-    <form class="management-toolbar" method="get" action="palestrantes.php">
-        <label class="management-muted" for="evento-palestrantes">Evento</label>
-        <select id="evento-palestrantes" class="management-select" name="evento_id">
-            <?php foreach ($eventos as $evento): ?>
-                <option value="<?= (int) $evento['id'] ?>"<?= (int) $evento['id'] === $eventoId ? ' selected' : '' ?>><?= h($evento['titulo']) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <button class="management-button management-button--secondary" type="submit">Abrir evento</button>
+    <form class="management-toolbar management-event-picker" method="get" action="palestrantes.php">
+        <?php managementEventPicker($eventos, $eventoId, 'Abrir'); ?>
     </form>
     <?php if ($eventoAtual !== null): ?>
         <form class="management-panel" method="post" action="palestrantes.php">

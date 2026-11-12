@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body class="app-body">
     <div class="app-shell app-shell--compact">
         <?php appHeader($usuario); ?>
-        <main class="app-content">
+        <main class="app-content" id="conteudo">
             <section class="app-bottom-sheet" aria-label="Confirmar cancelamento">
                 <h2 class="app-bottom-sheet__title">Cancelar inscrição?</h2>
                 <p class="app-bottom-sheet__text">Ao confirmar, sua vaga será liberada para outros participantes e a inscrição será removida do seu histórico ativo.</p>
