@@ -73,13 +73,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <form class="auth-form" action="index.php" method="post">
                 <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
+                <?php renderRequiredFieldsNote(); ?>
                 <div class="campo">
-                    <label for="email">E-mail</label>
+                    <label for="email">E-mail <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                     <input type="email" id="email" name="email" autocomplete="email" placeholder="seuemail@exemplo.com" required>
                 </div>
 
                 <div class="campo">
-                    <label for="senha">Senha</label>
+                    <label for="senha">Senha <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                     <input type="password" id="senha" name="senha" autocomplete="current-password" placeholder="Digite sua senha" required>
                 </div>
 

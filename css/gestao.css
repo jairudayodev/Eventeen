@@ -303,6 +303,10 @@
     letter-spacing: -.03em;
 }
 
+.management-panel > .required-fields-note {
+    margin-bottom: 16px;
+}
+
 .management-panel__heading a {
     color: var(--vermelho);
     font-size: 13px;

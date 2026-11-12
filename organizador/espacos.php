@@ -141,13 +141,14 @@ renderManagementStart($usuario, 'Espaços disponíveis', 'Cadastre os locais e s
             <input type="hidden" name="acao" value="salvar">
             <?php if ($editarId !== null): ?><input type="hidden" name="espaco_id" value="<?= $editarId ?>"><?php endif; ?>
             <div class="management-panel__heading"><h2><?= $editarId === null ? 'Cadastrar espaço' : 'Editar espaço' ?></h2></div>
+            <?php renderRequiredFieldsNote(); ?>
             <div class="management-form-grid">
                 <div class="management-field">
-                    <label for="nome-espaco">Nome</label>
+                    <label for="nome-espaco">Nome <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                     <input class="management-input" id="nome-espaco" name="nome" maxlength="120" required value="<?= h($form['nome']) ?>" placeholder="Ex.: Auditório">
                 </div>
                 <div class="management-field">
-                    <label for="capacidade-espaco">Capacidade (pessoas)</label>
+                    <label for="capacidade-espaco">Capacidade (pessoas) <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                     <input class="management-input" id="capacidade-espaco" name="capacidade" type="number" min="1" max="4294967295" required value="<?= h($form['capacidade']) ?>">
                 </div>
                 <div class="management-field management-field--full">

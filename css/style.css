@@ -119,6 +119,17 @@ h1 {
     font-weight: 700;
 }
 
+.ajuda--obrigatorios {
+    color: var(--vermelho);
+}
+
+.required-fields-note {
+    margin: 0;
+    color: var(--vermelho);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
 .campo input {
     display: block;
     width: 100%;
@@ -143,72 +154,46 @@ h1 {
     box-shadow: 0 0 0 3px rgba(192, 23, 45, .12);
 }
 
-.selecao-perfil {
-    min-width: 0;
-    margin: 0;
-    padding: 0;
-    border: 0;
-}
-
-.selecao-perfil legend {
-    margin-bottom: 8px;
-    font-size: 15px;
-    font-weight: 700;
-}
-
-.opcoes-perfil {
+.cadastro-abas {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-}
-
-.opcao-perfil {
-    position: relative;
-    cursor: pointer;
-}
-
-.opcao-perfil input {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    clip-path: inset(50%);
-}
-
-.opcao-perfil__conteudo {
-    display: flex;
-    min-height: 76px;
-    padding: 13px 15px;
-    border: 1px solid var(--borda);
-    border-radius: 11px;
-    background: var(--branco);
-    flex-direction: column;
-    justify-content: center;
+    padding: 5px;
+    border-radius: 12px;
+    background: #f0f1f5;
     gap: 5px;
-    transition: border-color .18s ease, background-color .18s ease, box-shadow .18s ease;
 }
 
-.opcao-perfil__conteudo strong {
-    font-size: 15px;
-}
-
-.opcao-perfil__conteudo small {
+.cadastro-aba {
+    min-height: 44px;
+    padding: 9px 14px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
     color: var(--cinza);
-    font-size: 13px;
-    line-height: 1.35;
+    cursor: pointer;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    transition: color .18s ease, background-color .18s ease, box-shadow .18s ease;
 }
 
-.opcao-perfil input:checked + .opcao-perfil__conteudo {
-    border-color: var(--vermelho);
-    background: var(--rosa-claro);
-    box-shadow: 0 0 0 2px rgba(192, 23, 45, .1);
+.cadastro-aba--ativa {
+    background: var(--branco);
+    color: var(--vermelho);
+    box-shadow: 0 2px 8px rgba(30, 36, 58, .1);
 }
 
-.opcao-perfil input:focus-visible + .opcao-perfil__conteudo {
+.cadastro-aba:focus-visible {
     outline: 3px solid rgba(192, 23, 45, .35);
-    outline-offset: 3px;
+    outline-offset: 2px;
+}
+
+.cadastro-painel[hidden] {
+    display: none;
+}
+
+.cadastro-painel > .ajuda {
+    margin: 0;
 }
 
 .ajuda {

@@ -132,12 +132,13 @@ $prefixo = applicationRootPrefix();
                 <form class="auth-form" method="post" action="<?= h($prefixo) ?>configuracoes-conta.php">
                     <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                     <input type="hidden" name="acao" value="perfil">
+                    <?php renderRequiredFieldsNote(); ?>
                     <div class="campo">
-                        <label for="nome">Nome completo</label>
+                        <label for="nome">Nome completo <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                         <input type="text" id="nome" name="nome" autocomplete="name" maxlength="150" value="<?= h($dadosConta['nome']) ?>" required>
                     </div>
                     <div class="campo">
-                        <label for="email">E-mail</label>
+                        <label for="email">E-mail <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                         <input type="email" id="email" name="email" autocomplete="email" maxlength="190" value="<?= h($dadosConta['email']) ?>" required>
                     </div>
                     <div class="campo">
@@ -159,17 +160,18 @@ $prefixo = applicationRootPrefix();
                 <form class="auth-form" method="post" action="<?= h($prefixo) ?>configuracoes-conta.php">
                     <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                     <input type="hidden" name="acao" value="senha">
+                    <?php renderRequiredFieldsNote(); ?>
                     <div class="campo">
-                        <label for="senha-atual">Senha atual</label>
+                        <label for="senha-atual">Senha atual <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                         <input type="password" id="senha-atual" name="senha_atual" autocomplete="current-password" required>
                     </div>
                     <div class="campo">
-                        <label for="nova-senha">Nova senha</label>
+                        <label for="nova-senha">Nova senha <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                         <input type="password" id="nova-senha" name="nova_senha" autocomplete="new-password" minlength="8" aria-describedby="senha-ajuda" required>
                         <small id="senha-ajuda" class="ajuda">Use pelo menos 8 caracteres.</small>
                     </div>
                     <div class="campo">
-                        <label for="confirmar-senha">Confirmar nova senha</label>
+                        <label for="confirmar-senha">Confirmar nova senha <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                         <input type="password" id="confirmar-senha" name="confirmar_senha" autocomplete="new-password" minlength="8" required>
                     </div>
                     <div class="account-settings-card__footer">

@@ -140,9 +140,10 @@ renderManagementStart($usuario, 'Palestrantes', 'Cadastre os convidados e associ
             <input type="hidden" name="acao" value="salvar">
             <?php if ($editarId !== null): ?><input type="hidden" name="palestrante_id" value="<?= $editarId ?>"><?php endif; ?>
             <div class="management-panel__heading"><h2><?= $editarId === null ? 'Adicionar palestrante' : 'Editar palestrante' ?></h2></div>
+            <?php renderRequiredFieldsNote(); ?>
             <div class="management-form-grid">
                 <div class="management-field">
-                    <label for="nome-palestrante">Nome</label>
+                    <label for="nome-palestrante">Nome <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                     <input class="management-input" id="nome-palestrante" name="nome" maxlength="150" required value="<?= h($form['nome']) ?>">
                 </div>
                 <div class="management-field">

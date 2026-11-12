@@ -63,13 +63,14 @@ renderManagementStart($usuario, 'Gerenciar usuário', 'Atualize os dados da cont
         <h2><?= h($conta['nome']) ?></h2>
         <span class="management-badge"><?= h(rotuloPerfil((string) $conta['perfil'])) ?></span>
     </div>
+    <?php renderRequiredFieldsNote(); ?>
     <div class="management-form-grid">
         <div class="management-field">
-            <label for="nome-usuario">Nome completo</label>
+            <label for="nome-usuario">Nome completo <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
             <input id="nome-usuario" class="management-input" name="nome" maxlength="150" required value="<?= h($valores['nome']) ?>">
         </div>
         <div class="management-field">
-            <label for="email-usuario">E-mail</label>
+            <label for="email-usuario">E-mail <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
             <input id="email-usuario" class="management-input" name="email" type="email" maxlength="190" required value="<?= h($valores['email']) ?>">
         </div>
         <div class="management-field">

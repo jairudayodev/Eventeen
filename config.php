@@ -48,6 +48,13 @@ function validateCsrfToken(): void
     }
 }
 
+function renderRequiredFieldsNote(): void
+{
+    ?>
+    <p class="required-fields-note">Campos marcados com <span class="campo-obrigatorio" aria-hidden="true">*</span> são obrigatórios.</p>
+    <?php
+}
+
 function requireLogin(): array
 {
     global $pdo;

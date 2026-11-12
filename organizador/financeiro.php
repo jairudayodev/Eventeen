@@ -157,6 +157,7 @@ $rotulosPagamento = ['pendente' => 'Pendente', 'confirmado' => 'Confirmado', 'es
 <?php if (!$eventos): ?>
     <p class="management-notice">Cadastre um evento e vincule seu usuário como organizador para registrar movimentações financeiras.</p>
 <?php else: ?>
+    <?php renderRequiredFieldsNote(); ?>
     <form class="management-toolbar" method="get" action="financeiro.php">
         <label class="management-muted" for="evento-financeiro">Evento</label>
         <select id="evento-financeiro" class="management-select" name="evento_id">
@@ -216,7 +217,8 @@ $rotulosPagamento = ['pendente' => 'Pendente', 'confirmado' => 'Confirmado', 'es
                                             <input type="hidden" name="evento_id" value="<?= $eventoId ?>">
                                             <input type="hidden" name="acao" value="pagamento_registrar">
                                             <input type="hidden" name="inscricao_id" value="<?= (int) $pagamento['inscricao_id'] ?>">
-                                            <input class="management-input" name="valor" inputmode="decimal" required value="<?= h(number_format($valorInscricao, 2, ',', '')) ?>" aria-label="Valor pago" size="8">
+                                            <input class="management-input" name="valor" inputmode="decimal" required value="<?= h(number_format($valorInscricao, 2, ',', '')) ?>" aria-label="Valor pago (obrigatório)" size="8">
+                                            <span class="campo-obrigatorio" aria-hidden="true">*</span>
                                             <select class="management-select" name="forma_pagamento" aria-label="Forma de pagamento">
                                                 <?php foreach (FORMAS_PAGAMENTO as $valorForma => $rotuloForma): ?>
                                                     <option value="<?= h($valorForma) ?>"><?= h($rotuloForma) ?></option>
@@ -258,26 +260,26 @@ $rotulosPagamento = ['pendente' => 'Pendente', 'confirmado' => 'Confirmado', 'es
         <div class="management-panel__heading"><h2>Novo lançamento · <?= h($eventoAtual['titulo']) ?></h2></div>
         <div class="management-form-grid">
             <div class="management-field management-field--full">
-                <label for="descricao-lancamento">Descrição</label>
+                <label for="descricao-lancamento">Descrição <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                 <input class="management-input" id="descricao-lancamento" name="descricao" maxlength="180" required placeholder="Ex.: Patrocínio, locação de equipamentos">
             </div>
             <div class="management-field">
-                <label for="tipo-lancamento">Tipo</label>
+                <label for="tipo-lancamento">Tipo <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                 <select class="management-select" id="tipo-lancamento" name="tipo" required>
                     <option value="entrada">Entrada</option>
                     <option value="despesa">Despesa</option>
                 </select>
             </div>
             <div class="management-field">
-                <label for="valor-lancamento">Valor total (R$)</label>
+                <label for="valor-lancamento">Valor total (R$) <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                 <input class="management-input" id="valor-lancamento" name="valor" inputmode="decimal" required placeholder="1250,00">
             </div>
             <div class="management-field">
-                <label for="data-lancamento">Data</label>
+                <label for="data-lancamento">Data <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                 <input class="management-input" id="data-lancamento" name="data_movimentacao" type="date" required value="<?= h(date('Y-m-d')) ?>">
             </div>
             <div class="management-field">
-                <label for="status-lancamento">Status</label>
+                <label for="status-lancamento">Status <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                 <select class="management-select" id="status-lancamento" name="status" required>
                     <option value="pendente">Pendente</option>
                     <option value="realizado">Realizado</option>

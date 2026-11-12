@@ -203,17 +203,18 @@ renderManagementStart($usuario, 'Atividades e programação', 'Monte a agenda do
                 <input type="hidden" name="acao" value="salvar">
                 <?php if ($editarId !== null): ?><input type="hidden" name="atividade_id" value="<?= $editarId ?>"><?php endif; ?>
                 <div class="management-panel__heading"><h2><?= $editarId === null ? 'Adicionar atividade' : 'Editar atividade' ?></h2></div>
+                <?php renderRequiredFieldsNote(); ?>
                 <div class="management-form-grid">
                     <div class="management-field management-field--full">
-                        <label for="titulo-atividade">Título</label>
+                        <label for="titulo-atividade">Título <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                         <input class="management-input" id="titulo-atividade" name="titulo" maxlength="180" required value="<?= h($form['titulo']) ?>">
                     </div>
                     <div class="management-field">
-                        <label for="tipo-atividade">Tipo</label>
+                        <label for="tipo-atividade">Tipo <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                         <input class="management-input" id="tipo-atividade" name="tipo" maxlength="80" required value="<?= h($form['tipo']) ?>" placeholder="Palestra, oficina...">
                     </div>
                     <div class="management-field">
-                        <label for="espaco-atividade">Espaço</label>
+                        <label for="espaco-atividade">Espaço <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                         <select class="management-select" id="espaco-atividade" name="espaco_id" required>
                             <option value="">Selecione</option>
                             <?php foreach ($espacos as $espaco): ?>
@@ -222,19 +223,19 @@ renderManagementStart($usuario, 'Atividades e programação', 'Monte a agenda do
                         </select>
                     </div>
                     <div class="management-field">
-                        <label for="inicio-atividade">Início</label>
+                        <label for="inicio-atividade">Início <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                         <input class="management-input" id="inicio-atividade" name="inicio" type="datetime-local" required value="<?= h($form['inicio']) ?>">
                     </div>
                     <div class="management-field">
-                        <label for="fim-atividade">Fim</label>
+                        <label for="fim-atividade">Fim <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                         <input class="management-input" id="fim-atividade" name="fim" type="datetime-local" required value="<?= h($form['fim']) ?>">
                     </div>
                     <div class="management-field">
-                        <label for="capacidade-atividade">Capacidade (pessoas)</label>
+                        <label for="capacidade-atividade">Capacidade (pessoas) <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                         <input class="management-input" id="capacidade-atividade" name="capacidade" type="number" min="1" max="4294967295" required value="<?= h($form['capacidade']) ?>">
                     </div>
                     <div class="management-field">
-                        <label for="palestrantes-atividade">Palestrantes</label>
+                        <label for="palestrantes-atividade">Palestrantes <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                         <select class="management-select management-select--multiple" id="palestrantes-atividade" name="palestrantes[]" multiple required>
                             <?php foreach ($palestrantes as $palestrante): ?>
                                 <option value="<?= (int) $palestrante['id'] ?>"<?= in_array((int) $palestrante['id'], $palestrantesSelecionados, true) ? ' selected' : '' ?>><?= h($palestrante['nome']) ?></option>

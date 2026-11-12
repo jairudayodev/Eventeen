@@ -44,8 +44,9 @@ $certificado = $codigo !== '' ? buscarCertificadoPorCodigo($pdo, $codigo) : null
             <?php endif; ?>
 
             <form class="auth-form" action="validar-certificado.php" method="get">
+                <?php renderRequiredFieldsNote(); ?>
                 <div class="campo">
-                    <label for="codigo">Código de validação</label>
+                    <label for="codigo">Código de validação <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                     <input type="text" id="codigo" name="codigo" value="<?= h($codigo) ?>" placeholder="XXXX-XXXX-XXXX-XXXX" maxlength="24" autocomplete="off" required>
                 </div>
                 <button type="submit" class="botao">Validar</button>

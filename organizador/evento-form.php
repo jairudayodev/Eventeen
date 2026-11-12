@@ -308,11 +308,12 @@ renderManagementStart(
     <?php if ($eventoId !== null): ?><input type="hidden" name="evento_id" value="<?= (int) $eventoId ?>"><?php endif; ?>
     <div class="management-panel__heading">
         <h2>Informações do evento</h2>
-        <span class="management-badge <?= h($statusClasses[$statusExibicao] ?? '') ?>"><?= h($statusRotulos[$statusExibicao] ?? $statusExibicao) ?></span>
+        <!--<span class="management-badge <?= h($statusClasses[$statusExibicao] ?? '') ?>"><?= h($statusRotulos[$statusExibicao] ?? $statusExibicao) ?></span>-->
     </div>
+    <?php renderRequiredFieldsNote(); ?>
     <div class="management-form-grid">
         <div class="management-field management-field--full">
-            <label for="titulo-evento">Nome do evento</label>
+            <label for="titulo-evento">Nome do evento <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
             <input id="titulo-evento" name="titulo" class="management-input" type="text" maxlength="180" required value="<?= h($valores['titulo']) ?>" placeholder="Ex.: Semana de Tecnologia 2026">
         </div>
         <div class="management-field">
@@ -320,19 +321,19 @@ renderManagementStart(
             <input id="categoria-evento" name="categoria" class="management-input" type="text" maxlength="80" value="<?= h($valores['categoria']) ?>" placeholder="Ex.: Tecnologia">
         </div>
         <div class="management-field">
-            <label for="local-evento">Local</label>
+            <label for="local-evento">Local <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
             <input id="local-evento" name="local" class="management-input" type="text" maxlength="180" required value="<?= h($valores['local']) ?>" placeholder="Ex.: Auditório">
         </div>
         <div class="management-field">
-            <label for="inicio-evento">Início</label>
+            <label for="inicio-evento">Início <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
             <input id="inicio-evento" name="inicio" class="management-input" type="datetime-local" required value="<?= h($valores['inicio']) ?>">
         </div>
         <div class="management-field">
-            <label for="fim-evento">Encerramento</label>
+            <label for="fim-evento">Encerramento <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
             <input id="fim-evento" name="fim" class="management-input" type="datetime-local" required value="<?= h($valores['fim']) ?>">
         </div>
         <div class="management-field">
-            <label for="vagas-evento">Limite de participantes</label>
+            <label for="vagas-evento">Limite de participantes <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
             <input id="vagas-evento" name="capacidade" class="management-input" type="number" min="1" step="1" required value="<?= h($valores['capacidade']) ?>">
             <?php if ($evento !== null): ?><small class="management-muted"><?= $inscritos ?> inscrição(ões) ativa(s); a capacidade não pode ficar abaixo desse número.</small><?php endif; ?>
         </div>
@@ -354,7 +355,7 @@ renderManagementStart(
             <?php endif; ?>
         </div>
         <div class="management-field management-field--full">
-            <label for="organizadores-evento">Organizadores</label>
+            <label for="organizadores-evento">Organizadores <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
             <select id="organizadores-evento" name="organizadores[]" class="management-select management-select--multiple" multiple required>
                 <?php foreach ($organizadoresDisponiveis as $organizador): ?>
                     <option value="<?= (int) $organizador['id'] ?>"<?= in_array((int) $organizador['id'], $organizadoresSelecionados, true) ? ' selected' : '' ?>><?= h($organizador['nome']) ?> · <?= h($organizador['email']) ?></option>

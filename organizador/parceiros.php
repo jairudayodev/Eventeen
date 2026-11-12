@@ -147,9 +147,10 @@ renderManagementStart(
     <?php if ($eventoId !== null): ?><input type="hidden" name="evento_id" value="<?= $eventoId ?>"><?php endif; ?>
     <input type="hidden" name="acao" value="parceiro">
     <div class="management-panel__heading"><h2>Cadastrar parceiro</h2></div>
+    <?php renderRequiredFieldsNote(); ?>
     <div class="management-form-grid">
         <div class="management-field">
-            <label for="nome-parceiro">Nome</label>
+            <label for="nome-parceiro">Nome <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
             <input class="management-input" id="nome-parceiro" name="nome" maxlength="150" required>
         </div>
         <div class="management-field">
@@ -175,9 +176,10 @@ renderManagementStart(
         <?php if (!$parceiros): ?>
             <p class="management-muted">Cadastre um parceiro antes de registrar seu patrocínio.</p>
         <?php else: ?>
+            <?php renderRequiredFieldsNote(); ?>
             <div class="management-form-grid">
                 <div class="management-field">
-                    <label for="parceiro-patrocinio">Parceiro</label>
+                    <label for="parceiro-patrocinio">Parceiro <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                     <select class="management-select" id="parceiro-patrocinio" name="parceiro_id" required>
                         <option value="">Selecione</option>
                         <?php foreach ($parceiros as $parceiro): ?>
@@ -186,7 +188,7 @@ renderManagementStart(
                     </select>
                 </div>
                 <div class="management-field">
-                    <label for="tipo-patrocinio">Tipo de apoio</label>
+                    <label for="tipo-patrocinio">Tipo de apoio <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                     <select class="management-select" id="tipo-patrocinio" name="tipo_apoio" required>
                         <?php foreach (TIPOS_APOIO as $valorTipo => $rotuloTipo): ?>
                             <option value="<?= h($valorTipo) ?>"><?= h($rotuloTipo) ?></option>
@@ -194,7 +196,7 @@ renderManagementStart(
                     </select>
                 </div>
                 <div class="management-field">
-                    <label for="cota-patrocinio">Cota</label>
+                    <label for="cota-patrocinio">Cota <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                     <input class="management-input" id="cota-patrocinio" name="cota" maxlength="80" required placeholder="Ouro, prata, apoio...">
                 </div>
                 <div class="management-field">
@@ -202,7 +204,7 @@ renderManagementStart(
                     <input class="management-input" id="valor-patrocinio" name="valor" inputmode="decimal" placeholder="5000,00">
                 </div>
                 <div class="management-field management-field--full">
-                    <label for="descricao-patrocinio">Recurso oferecido <span class="management-muted">(obrigatório para apoio material ou institucional)</span></label>
+                    <label for="descricao-patrocinio">Recurso oferecido <span class="campo-obrigatorio">(obrigatório para apoio material ou institucional)</span></label>
                     <input class="management-input" id="descricao-patrocinio" name="descricao_apoio" maxlength="500" placeholder="Ex.: 200 camisetas, divulgação institucional, empréstimo de equipamentos">
                 </div>
                 <div class="management-field management-field--full">
