@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . '/config.php';
+require __DIR__ . '/includes/autenticacao.php';
 
 if (!empty($_SESSION['usuario'])) {
     header('Location: ' . profileHomePath((string) ($_SESSION['usuario']['perfil'] ?? 'participante')));
@@ -13,7 +14,7 @@ $codigoOrganizador = (string) ($_POST['codigo_organizador'] ?? '');
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     validateCsrfToken();
     $nome = trim((string) ($_POST['nome'] ?? ''));
-    $email = filter_var(trim((string) ($_POST['email'] ?? '')), FILTER_VALIDATE_EMAIL);
+    $email = filter_var(normalizarEmailAcesso(trim((string) ($_POST['email'] ?? ''))), FILTER_VALIDATE_EMAIL);
     $senha = (string) ($_POST['senha'] ?? '');
     $confirmacao = (string) ($_POST['confirmar-senha'] ?? '');
     $perfil = (string) ($_POST['perfil'] ?? '');

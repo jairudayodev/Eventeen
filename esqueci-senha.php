@@ -10,7 +10,7 @@ $emailInformado = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     validateCsrfToken();
     $emailInformado = trim((string) ($_POST['email'] ?? ''));
-    $email = filter_var($emailInformado, FILTER_VALIDATE_EMAIL);
+    $email = filter_var(normalizarEmailAcesso($emailInformado), FILTER_VALIDATE_EMAIL);
     if (!$email) {
         $erro = 'Informe um e-mail válido.';
     } else {

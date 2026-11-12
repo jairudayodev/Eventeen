@@ -82,7 +82,8 @@ function limparTentativasAcesso(PDO $pdo, string $tipo, string $email): void
  */
 function autenticarUsuario(PDO $pdo, string $email, string $senha, string $ip): array
 {
-    $espera = minutosBloqueioAcesso($pdo, 'login', $email, $ip);
+    $emailNormalizado = normalizarEmailAcesso($email);
+    $espera = minutosBloqueioAcesso($pdo, 'login', $emailNormalizado, $ip);
     if ($espera > 0) {
         throw new DomainException(sprintf(
             'Muitas tentativas de acesso. Aguarde %d %s e tente novamente, ou redefina sua senha.',
@@ -92,7 +93,7 @@ function autenticarUsuario(PDO $pdo, string $email, string $senha, string $ip): 
     }
 
     $consulta = $pdo->prepare('SELECT id, nome, email, senha_hash, perfil FROM usuarios WHERE email = :email LIMIT 1');
-    $consulta->execute(['email' => $email]);
+    $consulta->execute(['email' => $emailNormalizado]);
     $usuario = $consulta->fetch();
 
     // Sem conta, a senha é conferida contra um hash fixo para que o tempo de
@@ -120,7 +121,8 @@ function autenticarUsuario(PDO $pdo, string $email, string $senha, string $ip): 
  */
 function solicitarRedefinicaoSenha(PDO $pdo, string $email, string $ip): ?array
 {
-    $espera = minutosBloqueioAcesso($pdo, 'recuperacao', $email, $ip);
+    $emailNormalizado = normalizarEmailAcesso($email);
+    $espera = minutosBloqueioAcesso($pdo, 'recuperacao', $emailNormalizado, $ip);
     if ($espera > 0) {
         throw new DomainException(sprintf(
             'Já recebemos vários pedidos de recuperação há pouco. Confira sua caixa de entrada e o spam, ou aguarde %d %s para pedir de novo.',
@@ -128,10 +130,10 @@ function solicitarRedefinicaoSenha(PDO $pdo, string $email, string $ip): ?array
             $espera === 1 ? 'minuto' : 'minutos'
         ));
     }
-    registrarTentativaAcesso($pdo, 'recuperacao', $email, $ip);
+    registrarTentativaAcesso($pdo, 'recuperacao', $emailNormalizado, $ip);
 
     $consulta = $pdo->prepare('SELECT id, nome, email FROM usuarios WHERE email = :email LIMIT 1');
-    $consulta->execute(['email' => $email]);
+    $consulta->execute(['email' => $emailNormalizado]);
     $usuario = $consulta->fetch();
     if (!$usuario) {
         return null;
@@ -232,4 +234,62 @@ function redefinirSenhaComToken(PDO $pdo, string $token, string $novaSenha, stri
     limparTentativasAcesso($pdo, 'login', (string) $pedido['email']);
 
     return ['id' => (int) $pedido['usuario_id'], 'email' => $pedido['email']];
+}
+
+function limiteInatividadeSessao(string $perfil, bool $manterConectado): int
+{
+    if ($manterConectado) {
+        return in_array($perfil, ['organizador', 'administrador'], true) ? 12 * 3600 : 30 * 86400;
+    }
+
+    return 2 * 3600;
+}
+
+function assinaturaSenha(string $senhaHash): string
+{
+    $segredo = bin2hex(hash('sha256', (string) appConfig('url_base') . '|' . (string) appConfig('ambiente') . '|eventeen', true));
+    return hash_hmac('sha256', $senhaHash, $segredo);
+}
+
+function iniciarSessaoUsuario(array $usuario, bool $manterConectado = false): void
+{
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        session_start();
+    }
+
+    session_regenerate_id(true);
+    $_SESSION = [
+        'usuario' => [
+            'id' => (int) ($usuario['id'] ?? 0),
+            'nome' => (string) ($usuario['nome'] ?? ''),
+            'email' => (string) ($usuario['email'] ?? ''),
+            'perfil' => (string) ($usuario['perfil'] ?? 'participante'),
+        ],
+        'ultimo_acesso' => time(),
+        'manter_conectado' => $manterConectado,
+        'senha_assinatura' => assinaturaSenha((string) ($usuario['senha_hash'] ?? '')),
+    ];
+}
+
+function encerrarSessao(): void
+{
+    $_SESSION = [];
+    if (ini_get('session.use_cookies')) {
+        $parametros = session_get_cookie_params();
+        setcookie(
+            session_name(),
+            '',
+            time() - 3600,
+            $parametros['path'],
+            $parametros['domain'],
+            $parametros['secure'],
+            $parametros['httponly']
+        );
+    }
+    session_destroy();
+}
+
+function renderRequiredFieldsNote(): void
+{
+    echo '<p class="ajuda ajuda--obrigatorios">Campos marcados com <strong class="campo-obrigatorio">*</strong> são obrigatórios.</p>';
 }

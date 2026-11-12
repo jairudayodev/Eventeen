@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     validateCsrfToken();
     $aviso = null;
     $emailInformado = trim((string) ($_POST['email'] ?? ''));
-    $email = filter_var($emailInformado, FILTER_VALIDATE_EMAIL);
+    $email = filter_var(normalizarEmailAcesso($emailInformado), FILTER_VALIDATE_EMAIL);
     $senha = (string) ($_POST['senha'] ?? '');
 
     if (!$email || $senha === '') {

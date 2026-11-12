@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+date_default_timezone_set('UTC');
+
 /**
  * Configuração da aplicação.
  *
@@ -134,6 +136,7 @@ $pdo = new PDO(
         PDO::ATTR_EMULATE_PREPARES => false,
     ]
 );
+$pdo->exec("SET time_zone = '+00:00'");
 
 function h(string|int|null $value): string
 {

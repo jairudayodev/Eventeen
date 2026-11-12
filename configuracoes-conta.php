@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($acao === 'perfil') {
         $nome = trim((string) ($_POST['nome'] ?? ''));
-        $email = filter_var(trim((string) ($_POST['email'] ?? '')), FILTER_VALIDATE_EMAIL);
+        $email = filter_var(normalizarEmailAcesso(trim((string) ($_POST['email'] ?? ''))), FILTER_VALIDATE_EMAIL);
         $matricula = trim((string) ($_POST['matricula'] ?? ''));
 
         if ($nome === '' || mb_strlen($nome, 'UTF-8') > 150 || !$email || mb_strlen($email, 'UTF-8') > 190) {
