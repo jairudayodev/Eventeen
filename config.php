@@ -1,23 +1,133 @@
 <?php
 declare(strict_types=1);
 
-$host = '127.0.0.1';
-$db = 'eventeen';
-$user = 'root';
-$pass = '';
+/**
+ * Configuração da aplicação.
+ *
+ * Os valores abaixo servem para o ambiente local (XAMPP). Em um servidor,
+ * copie config.exemplo.php para config.local.php (arquivo fora do Git) e
+ * informe ali o banco, o endereço público e o envio de e-mails.
+ */
+function appConfig(?string $chave = null): mixed
+{
+    static $config = null;
+    if ($config === null) {
+        $config = [
+            'ambiente' => null,
+            'url_base' => '',
+            'forcar_https' => false,
+            'pasta_dados' => __DIR__ . '/storage',
+            'db' => ['host' => '127.0.0.1', 'nome' => 'eventeen', 'usuario' => 'root', 'senha' => ''],
+            'email' => [
+                'transporte' => 'arquivo',
+                'remetente' => 'nao-responda@eventeen.local',
+                'nome_remetente' => 'Eventeen',
+                'smtp' => ['host' => '', 'porta' => 587, 'seguranca' => 'tls', 'usuario' => '', 'senha' => '', 'tempo_limite' => 15],
+            ],
+        ];
+        $arquivoLocal = __DIR__ . '/config.local.php';
+        if (is_file($arquivoLocal)) {
+            $local = require $arquivoLocal;
+            if (is_array($local)) {
+                $config = array_replace_recursive($config, $local);
+            }
+        }
+        foreach (['host' => 'EVENTEEN_DB_HOST', 'nome' => 'EVENTEEN_DB_NOME', 'usuario' => 'EVENTEEN_DB_USUARIO', 'senha' => 'EVENTEEN_DB_SENHA'] as $campo => $variavel) {
+            $valor = getenv($variavel);
+            if ($valor !== false) {
+                $config['db'][$campo] = $valor;
+            }
+        }
+        if (getenv('EVENTEEN_AMBIENTE') !== false) {
+            $config['ambiente'] = getenv('EVENTEEN_AMBIENTE');
+        }
+        if (!in_array($config['ambiente'], ['desenvolvimento', 'producao'], true)) {
+            // Sem configuração explícita, só se considera desenvolvimento quando
+            // o acesso vem da própria máquina; qualquer outro acesso é tratado
+            // como produção (erros ocultos).
+            $local = PHP_SAPI === 'cli' || in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], true);
+            $config['ambiente'] = $local ? 'desenvolvimento' : 'producao';
+        }
+    }
+
+    return $chave === null ? $config : ($config[$chave] ?? null);
+}
+
+function appEmProducao(): bool
+{
+    return appConfig('ambiente') === 'producao';
+}
+
+function appPastaDados(string $subpasta): string
+{
+    $pasta = rtrim((string) appConfig('pasta_dados'), '/\\') . '/' . $subpasta;
+    if (!is_dir($pasta)) {
+        @mkdir($pasta, 0770, true);
+    }
+
+    return $pasta;
+}
+
+function requisicaoHttps(): bool
+{
+    return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https' && appConfig('forcar_https'));
+}
+
+error_reporting(E_ALL);
+ini_set('log_errors', '1');
+if (appEmProducao()) {
+    ini_set('display_errors', '0');
+    ini_set('error_log', appPastaDados('logs') . '/php-erros.log');
+    if (PHP_SAPI !== 'cli') {
+        set_exception_handler(static function (Throwable $erro): void {
+            error_log('Erro não tratado: ' . $erro);
+            if (!headers_sent()) {
+                http_response_code(500);
+                header('Content-Type: text/html; charset=UTF-8');
+            }
+            echo '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">'
+                . '<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Erro | Eventeen</title></head>'
+                . '<body style="font-family:system-ui,sans-serif;max-width:32rem;margin:15vh auto;padding:0 1rem;color:#1f2937">'
+                . '<h1 style="color:#c0172d">Algo deu errado</h1>'
+                . '<p>Não foi possível concluir a operação agora. Tente novamente em alguns instantes.</p>'
+                . '<p>Se o problema continuar, avise a organização do evento.</p>'
+                . '<p><a href="' . h(applicationBasePath() . '/index.php') . '" style="color:#c0172d">Voltar ao início</a></p></body></html>';
+        });
+    }
+} else {
+    ini_set('display_errors', '1');
+}
+
+if (PHP_SAPI !== 'cli') {
+    if (appEmProducao() && appConfig('forcar_https') && !requisicaoHttps()) {
+        $hostAtual = (string) ($_SERVER['HTTP_HOST'] ?? '');
+        if (preg_match('/^[A-Za-z0-9.\-]+(?::\d{1,5})?$/', $hostAtual)) {
+            header('Location: https://' . $hostAtual . ($_SERVER['REQUEST_URI'] ?? '/'), true, 301);
+            exit;
+        }
+    }
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: SAMEORIGIN');
+    header('Referrer-Policy: same-origin');
+    if (requisicaoHttps()) {
+        header('Strict-Transport-Security: max-age=31536000');
+    }
+}
 
 session_set_cookie_params([
     'httponly' => true,
     'samesite' => 'Lax',
-    'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+    'secure' => requisicaoHttps(),
 ]);
+ini_set('session.use_strict_mode', '1');
 ini_set('session.gc_maxlifetime', '2592000');
 session_start();
 
 $pdo = new PDO(
-    "mysql:host={$host};dbname={$db};charset=utf8mb4",
-    $user,
-    $pass,
+    sprintf('mysql:host=%s;dbname=%s;charset=utf8mb4', appConfig('db')['host'], appConfig('db')['nome']),
+    (string) appConfig('db')['usuario'],
+    (string) appConfig('db')['senha'],
     [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -48,27 +158,110 @@ function validateCsrfToken(): void
     }
 }
 
+/** Tempo máximo sem uso antes de a sessão expirar (RNF04). */
+function limiteInatividadeSessao(string $perfil, bool $manterConectado): int
+{
+    if (!$manterConectado) {
+        return 2 * 60 * 60;
+    }
+
+    // Perfis de gestão alteram dados de outras pessoas: mesmo com "manter
+    // conectado", a sessão dura no máximo 12 horas sem uso.
+    return $perfil === 'participante' ? 30 * 24 * 60 * 60 : 12 * 60 * 60;
+}
+
+/** Impressão da senha atual guardada na sessão: muda quando a senha é trocada. */
+function assinaturaSenha(string $senhaHash): string
+{
+    return hash('sha256', 'eventeen-sessao|' . $senhaHash);
+}
+
+/** Cria a sessão do usuário depois de um login ou cadastro bem-sucedido. */
+function iniciarSessaoUsuario(array $usuario, bool $manterConectado = false): void
+{
+    session_regenerate_id(true);
+    $_SESSION['usuario'] = [
+        'id' => (int) $usuario['id'],
+        'nome' => $usuario['nome'],
+        'email' => $usuario['email'],
+        'perfil' => $usuario['perfil'],
+    ];
+    $_SESSION['manter_conectado'] = $manterConectado;
+    $_SESSION['ultimo_acesso'] = time();
+    $_SESSION['senha_assinatura'] = assinaturaSenha((string) $usuario['senha_hash']);
+
+    if ($manterConectado && PHP_SAPI !== 'cli') {
+        $parametros = session_get_cookie_params();
+        setcookie(session_name(), session_id(), [
+            'expires' => time() + limiteInatividadeSessao((string) $usuario['perfil'], true),
+            'path' => $parametros['path'],
+            'secure' => requisicaoHttps(),
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+    }
+}
+
+function encerrarSessao(): void
+{
+    $_SESSION = [];
+    if (PHP_SAPI !== 'cli' && ini_get('session.use_cookies')) {
+        $parametros = session_get_cookie_params();
+        setcookie(session_name(), '', [
+            'expires' => time() - 42000,
+            'path' => $parametros['path'],
+            'domain' => $parametros['domain'],
+            'secure' => $parametros['secure'],
+            'httponly' => $parametros['httponly'],
+            'samesite' => $parametros['samesite'] ?? 'Lax',
+        ]);
+    }
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_destroy();
+    }
+}
+
 function requireLogin(): array
 {
     global $pdo;
 
+    $paginaLogin = applicationRootPrefix() . 'index.php';
     if (empty($_SESSION['usuario']['id'])) {
-        header('Location: ' . applicationRootPrefix() . 'index.php');
+        header('Location: ' . $paginaLogin);
         exit;
     }
 
     // O perfil é relido a cada requisição para que concessões e revogações
     // feitas pelo administrador tenham efeito imediato (RNF04).
-    $consulta = $pdo->prepare('SELECT id, nome, email, perfil FROM usuarios WHERE id = :id LIMIT 1');
+    $consulta = $pdo->prepare('SELECT id, nome, email, perfil, senha_hash FROM usuarios WHERE id = :id LIMIT 1');
     $consulta->execute(['id' => (int) $_SESSION['usuario']['id']]);
     $atual = $consulta->fetch();
     if (!$atual) {
-        $_SESSION = [];
-        session_destroy();
-        header('Location: ' . applicationRootPrefix() . 'index.php');
+        encerrarSessao();
+        header('Location: ' . $paginaLogin);
         exit;
     }
 
+    $agora = time();
+    $ultimoAcesso = (int) ($_SESSION['ultimo_acesso'] ?? $agora);
+    if ($agora - $ultimoAcesso > limiteInatividadeSessao((string) $atual['perfil'], !empty($_SESSION['manter_conectado']))) {
+        encerrarSessao();
+        header('Location: ' . $paginaLogin . '?sessao=expirada');
+        exit;
+    }
+
+    // Se a senha foi trocada (em outro dispositivo ou pela recuperação de
+    // senha), as demais sessões abertas deixam de valer.
+    $assinatura = assinaturaSenha((string) $atual['senha_hash']);
+    if (!isset($_SESSION['senha_assinatura'])) {
+        $_SESSION['senha_assinatura'] = $assinatura;
+    } elseif (!hash_equals((string) $_SESSION['senha_assinatura'], $assinatura)) {
+        encerrarSessao();
+        header('Location: ' . $paginaLogin . '?sessao=senha');
+        exit;
+    }
+
+    $_SESSION['ultimo_acesso'] = $agora;
     $_SESSION['usuario'] = [
         'id' => (int) $atual['id'],
         'nome' => $atual['nome'],
@@ -81,7 +274,14 @@ function requireLogin(): array
 
 function applicationBaseUrl(): string
 {
-    $https = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+    // Em produção, links enviados por e-mail ou impressos em certificados usam
+    // o endereço configurado, e não o cabeçalho Host da requisição.
+    $urlConfigurada = trim((string) appConfig('url_base'));
+    if ($urlConfigurada !== '') {
+        return rtrim($urlConfigurada, '/');
+    }
+
+    $https = requisicaoHttps();
     $host = (string) ($_SERVER['HTTP_HOST'] ?? 'localhost');
     if (!preg_match('/^[A-Za-z0-9.\-]+(?::\d{1,5})?$/', $host)) {
         $host = 'localhost';

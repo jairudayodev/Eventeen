@@ -3,6 +3,7 @@ declare(strict_types=1);
 require __DIR__ . '/../config.php';
 require __DIR__ . '/../includes/inscricoes.php';
 require_once __DIR__ . '/../includes/financeiro.php';
+require __DIR__ . '/../includes/email.php';
 $usuario = requireRole('participante');
 $eventoId = filter_var($_GET['id'] ?? $_POST['evento_id'] ?? null, FILTER_VALIDATE_INT);
 if (!$eventoId || $eventoId < 1) {
@@ -16,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     validateCsrfToken();
     try {
         inscreverParticipante($pdo, (int) $usuario['id'], $eventoId);
+        notificarInscricaoConfirmada($pdo, $usuario, $eventoId);
         header('Location: minhas-inscricoes.php?inscricao=confirmada');
         exit;
     } catch (DomainException $exception) {

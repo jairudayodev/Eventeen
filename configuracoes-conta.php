@@ -76,12 +76,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($novaSenha !== $confirmacao) {
             $erro = 'A confirmação não corresponde à nova senha.';
         } else {
+            $novoHash = password_hash($novaSenha, PASSWORD_DEFAULT);
             $atualizar = $pdo->prepare('UPDATE usuarios SET senha_hash = :senha_hash WHERE id = :id');
             $atualizar->execute([
-                'senha_hash' => password_hash($novaSenha, PASSWORD_DEFAULT),
+                'senha_hash' => $novoHash,
                 'id' => $usuarioId,
             ]);
+            // Esta sessão continua válida; as abertas em outros dispositivos são encerradas.
             session_regenerate_id(true);
+            $_SESSION['senha_assinatura'] = assinaturaSenha($novoHash);
             header('Location: configuracoes-conta.php?salvo=senha');
             exit;
         }

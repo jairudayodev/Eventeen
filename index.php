@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . '/config.php';
+require __DIR__ . '/includes/autenticacao.php';
 
 if (!empty($_SESSION['usuario'])) {
     header('Location: ' . profileHomePath((string) ($_SESSION['usuario']['perfil'] ?? 'participante')));
@@ -8,40 +9,31 @@ if (!empty($_SESSION['usuario'])) {
 }
 
 $erro = null;
+$aviso = match ($_GET['sessao'] ?? $_GET['senha'] ?? '') {
+    'expirada' => 'Sua sessão expirou por inatividade. Entre novamente.',
+    'senha' => 'Sua senha foi alterada. Entre novamente com a nova senha.',
+    'redefinida' => 'Senha redefinida. Entre com a nova senha.',
+    default => null,
+};
+$emailInformado = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     validateCsrfToken();
-    $email = filter_var(trim((string) ($_POST['email'] ?? '')), FILTER_VALIDATE_EMAIL);
+    $aviso = null;
+    $emailInformado = trim((string) ($_POST['email'] ?? ''));
+    $email = filter_var($emailInformado, FILTER_VALIDATE_EMAIL);
     $senha = (string) ($_POST['senha'] ?? '');
 
     if (!$email || $senha === '') {
         $erro = 'Informe um e-mail válido e sua senha.';
     } else {
-        $consulta = $pdo->prepare('SELECT id, nome, email, senha_hash, perfil FROM usuarios WHERE email = :email LIMIT 1');
-        $consulta->execute(['email' => $email]);
-        $usuario = $consulta->fetch();
-
-        if ($usuario && password_verify($senha, $usuario['senha_hash'])) {
-            session_regenerate_id(true);
-            $_SESSION['usuario'] = [
-                'id' => (int) $usuario['id'],
-                'nome' => $usuario['nome'],
-                'email' => $usuario['email'],
-                'perfil' => $usuario['perfil'],
-            ];
-            if (isset($_POST['manter-conectado'])) {
-                setcookie(session_name(), session_id(), [
-                    'expires' => time() + 30 * 24 * 60 * 60,
-                    'path' => '/',
-                    'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
-                    'httponly' => true,
-                    'samesite' => 'Lax',
-                ]);
-            }
+        try {
+            $usuario = autenticarUsuario($pdo, $email, $senha, ipCliente());
+            iniciarSessaoUsuario($usuario, isset($_POST['manter-conectado']));
             header('Location: ' . profileHomePath((string) $usuario['perfil']));
             exit;
+        } catch (DomainException $exception) {
+            $erro = $exception->getMessage();
         }
-
-        $erro = 'E-mail ou senha incorretos.';
     }
 }
 ?>
@@ -69,18 +61,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <?php if ($erro !== null): ?>
                 <p class="form-notice form-notice--error" role="alert"><?= h($erro) ?></p>
+            <?php elseif ($aviso !== null): ?>
+                <p class="form-notice form-notice--success" role="status"><?= h($aviso) ?></p>
             <?php endif; ?>
 
             <form class="auth-form" action="index.php" method="post">
                 <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                 <div class="campo">
                     <label for="email">E-mail</label>
-                    <input type="email" id="email" name="email" autocomplete="email" placeholder="seuemail@exemplo.com" required>
+                    <input type="email" id="email" name="email" autocomplete="email" placeholder="seuemail@exemplo.com" value="<?= h($emailInformado) ?>" required>
                 </div>
 
                 <div class="campo">
                     <label for="senha">Senha</label>
                     <input type="password" id="senha" name="senha" autocomplete="current-password" placeholder="Digite sua senha" required>
+                    <a class="link-auxiliar" href="esqueci-senha.php">Esqueci minha senha</a>
                 </div>
 
                 <label class="checkbox-linha" for="manter-conectado">

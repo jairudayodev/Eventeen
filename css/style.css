@@ -1569,3 +1569,30 @@ select:focus-visible {
     border-color: #e4e7ee;
     color: #4d586c;
 }
+
+/* Recuperação de senha */
+.link-auxiliar {
+    display: inline-block;
+    margin-top: 8px;
+    color: var(--vermelho, #c0172d);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.link-auxiliar:hover {
+    text-decoration: none;
+}
+
+.auth-texto {
+    margin: 0 0 18px;
+    color: var(--cinza, #5f6368);
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+a.botao {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
