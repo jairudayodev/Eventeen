@@ -60,13 +60,14 @@ $usuarioDoLink = usuarioDoTokenRedefinicao($pdo, $token);
                     <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
                     <input type="hidden" name="token" value="<?= h($token) ?>">
                     <input type="text" name="username" value="<?= h($usuarioDoLink['email']) ?>" autocomplete="username" hidden>
+                    <?php renderRequiredFieldsNote(); ?>
                     <div class="campo">
-                        <label for="nova-senha">Nova senha</label>
+                        <label for="nova-senha">Nova senha <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                         <input type="password" id="nova-senha" name="nova_senha" autocomplete="new-password" minlength="<?= SENHA_TAMANHO_MINIMO ?>" aria-describedby="senha-ajuda" required>
                         <small id="senha-ajuda" class="ajuda">Use pelo menos <?= SENHA_TAMANHO_MINIMO ?> caracteres.</small>
                     </div>
                     <div class="campo">
-                        <label for="confirmar-senha">Confirmar nova senha</label>
+                        <label for="confirmar-senha">Confirmar nova senha <span class="campo-obrigatorio" aria-hidden="true">*</span></label>
                         <input type="password" id="confirmar-senha" name="confirmar_senha" autocomplete="new-password" minlength="<?= SENHA_TAMANHO_MINIMO ?>" required>
                     </div>
                     <button type="submit" class="botao">Salvar nova senha</button>

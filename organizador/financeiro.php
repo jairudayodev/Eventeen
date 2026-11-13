@@ -157,14 +157,8 @@ $rotulosPagamento = ['pendente' => 'Pendente', 'confirmado' => 'Confirmado', 'es
 <?php if (!$eventos): ?>
     <p class="management-notice">Cadastre um evento e vincule seu usuário como organizador para registrar movimentações financeiras.</p>
 <?php else: ?>
-    <form class="management-toolbar" method="get" action="financeiro.php">
-        <label class="management-muted" for="evento-financeiro">Evento</label>
-        <select id="evento-financeiro" class="management-select" name="evento_id">
-            <?php foreach ($eventos as $evento): ?>
-                <option value="<?= (int) $evento['id'] ?>"<?= (int) $evento['id'] === $eventoId ? ' selected' : '' ?>><?= h($evento['titulo']) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <button class="management-button management-button--secondary" type="submit">Ver saldo</button>
+    <form class="management-toolbar management-event-picker" method="get" action="financeiro.php">
+        <?php managementEventPicker($eventos, $eventoId, 'Ver saldo'); ?>
     </form>
 
     <section class="management-kpis" aria-label="Resumo financeiro do evento">
@@ -257,6 +251,7 @@ $rotulosPagamento = ['pendente' => 'Pendente', 'confirmado' => 'Confirmado', 'es
         <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
         <input type="hidden" name="acao" value="lancamento">
         <div class="management-panel__heading"><h2>Novo lançamento · <?= h($eventoAtual['titulo']) ?></h2></div>
+        <?php renderRequiredFieldsNote(); ?>
         <div class="management-form-grid">
             <div class="management-field management-field--full">
                 <label for="descricao-lancamento">Descrição <span class="campo-obrigatorio" aria-hidden="true">*</span></label>

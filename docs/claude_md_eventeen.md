@@ -278,6 +278,7 @@ Não escolher stack por conta própria: sugerir opções apenas quando pedido e 
 | D-07 | 2026-11-11 | Administrador tem acesso total (usuários, todos os eventos e área do participante); cadastro público permite escolher participante ou organizador | Decisão da equipe (commit 96546ef) | RN06, RN15, RF01, UC01 |
 | D-08 | 2026-11-12 | Revisão de usabilidade: menu de gestão agrupado, atalhos por evento, presença em lote, confirmações, campos obrigatórios marcados e correção do link do logotipo | RNF05, RNF06 e defeito de navegação | Interface, seção 5.4 |
 | D-09 | 2026-11-12 | Preparação para publicação: recuperação de senha e confirmação de inscrição por e-mail (SMTP, mail() ou arquivo), limite de tentativas de login, expiração de sessão por inatividade, troca de senha encerra outras sessões, configuração do servidor em config.local.php e erros ocultos em produção | Avaliação de prontidão para uso público | RF02, RNF02, RNF04, seções 1.7, 11 e 12 |
+| D-10 | 2026-11-13 | Cadastro em abas com código de acesso para organizadores (valor em `codigo_organizador`, trocável em config.local.php); asterisco em campos obrigatórios com aviso em cada formulário; fuso horário configurável (padrão America/Sao_Paulo) com o banco ajustado ao mesmo fuso | Mudanças da equipe integradas após merge com defeitos | RN15, RF01, CA-RF01, UC01, seções 11 e 12 |
 |  |  |  |  |  |
 
 ---
@@ -311,4 +312,5 @@ Não escolher stack por conta própria: sugerir opções apenas quando pedido e 
 | 2026-11-11 | Stack, comandos e decisões D-02 a D-06 registrados após a revisão do código e da Documentação do Desenvolvimento |
 | 2026-11-12 | Decisões D-07 e D-08 registradas (perfis de acesso e revisão de interface) |
 | 2026-11-12 | Decisão D-09 registrada (segurança e publicação); suíte com 9 arquivos e 174 verificações |
+| 2026-11-13 | Correção do merge e decisão D-10 registrada; suíte com 9 arquivos e 179 verificações |
 

@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erro = 'As senhas não coincidem.';
     } elseif (!isset($_POST['termos'])) {
         $erro = 'É necessário concordar com os termos de uso.';
-    } elseif ($perfil === 'organizador' && !hash_equals('FTC_OUR_26', $codigoOrganizador)) {
+    } elseif ($perfil === 'organizador' && !codigoOrganizadorValido($codigoOrganizador)) {
         $erro = 'O código de organizador é inválido.';
     } else {
         try {

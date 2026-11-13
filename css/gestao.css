@@ -975,20 +975,11 @@
     text-transform: uppercase;
 }
 
-.management-field:has(:required) > label::after {
+/* Asterisco automático só para campos obrigatórios cujo rótulo ainda não tem o marcador no HTML. */
+.management-field:has(:required) > label:not(:has(.campo-obrigatorio))::after {
     content: " *";
     color: var(--vermelho);
     font-weight: 700;
-}
-
-.management-required-note {
-    margin: 0 0 4px;
-    color: #697286;
-    font-size: 13px;
-}
-
-.management-required-note strong {
-    color: var(--vermelho);
 }
 
 .management-notice a,

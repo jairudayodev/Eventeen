@@ -1,8 +1,6 @@
 <?php
 declare(strict_types=1);
 
-date_default_timezone_set('UTC');
-
 /**
  * Configuração da aplicação.
  *
@@ -19,6 +17,9 @@ function appConfig(?string $chave = null): mixed
             'url_base' => '',
             'forcar_https' => false,
             'pasta_dados' => __DIR__ . '/storage',
+            'fuso_horario' => 'America/Sao_Paulo',
+            // Código exigido no cadastro público de organizadores. Em produção, troque-o em config.local.php.
+            'codigo_organizador' => 'FTC_OUR_26',
             'db' => ['host' => '127.0.0.1', 'nome' => 'eventeen', 'usuario' => 'root', 'senha' => ''],
             'email' => [
                 'transporte' => 'arquivo',
@@ -53,6 +54,10 @@ function appConfig(?string $chave = null): mixed
     }
 
     return $chave === null ? $config : ($config[$chave] ?? null);
+}
+
+if (!@date_default_timezone_set((string) appConfig('fuso_horario'))) {
+    date_default_timezone_set('America/Sao_Paulo');
 }
 
 function appEmProducao(): bool
@@ -136,7 +141,9 @@ $pdo = new PDO(
         PDO::ATTR_EMULATE_PREPARES => false,
     ]
 );
-$pdo->exec("SET time_zone = '+00:00'");
+// O banco usa o mesmo fuso do PHP: NOW() e date() devolvem a mesma hora local,
+// a mesma em que os horários dos eventos são cadastrados.
+$pdo->exec("SET time_zone = '" . date('P') . "'");
 
 function h(string|int|null $value): string
 {
@@ -159,6 +166,83 @@ function validateCsrfToken(): void
         http_response_code(400);
         exit('Solicitação inválida. Atualize a página e tente novamente.');
     }
+}
+
+/** Tempo máximo sem uso antes de a sessão expirar (RNF04). */
+function limiteInatividadeSessao(string $perfil, bool $manterConectado): int
+{
+    if (!$manterConectado) {
+        return 2 * 60 * 60;
+    }
+
+    // Perfis de gestão alteram dados de outras pessoas: mesmo com "manter
+    // conectado", a sessão dura no máximo 12 horas sem uso.
+    return $perfil === 'participante' ? 30 * 24 * 60 * 60 : 12 * 60 * 60;
+}
+
+/** Impressão da senha atual guardada na sessão: muda quando a senha é trocada. */
+function assinaturaSenha(string $senhaHash): string
+{
+    return hash('sha256', 'eventeen-sessao|' . $senhaHash);
+}
+
+/** Cria a sessão do usuário depois de um login ou cadastro bem-sucedido. */
+function iniciarSessaoUsuario(array $usuario, bool $manterConectado = false): void
+{
+    session_regenerate_id(true);
+    $_SESSION['usuario'] = [
+        'id' => (int) $usuario['id'],
+        'nome' => $usuario['nome'],
+        'email' => $usuario['email'],
+        'perfil' => $usuario['perfil'],
+    ];
+    $_SESSION['manter_conectado'] = $manterConectado;
+    $_SESSION['ultimo_acesso'] = time();
+    $_SESSION['senha_assinatura'] = assinaturaSenha((string) $usuario['senha_hash']);
+
+    if ($manterConectado && PHP_SAPI !== 'cli') {
+        $parametros = session_get_cookie_params();
+        setcookie(session_name(), session_id(), [
+            'expires' => time() + limiteInatividadeSessao((string) $usuario['perfil'], true),
+            'path' => $parametros['path'],
+            'secure' => requisicaoHttps(),
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+    }
+}
+
+function encerrarSessao(): void
+{
+    $_SESSION = [];
+    if (PHP_SAPI !== 'cli' && ini_get('session.use_cookies')) {
+        $parametros = session_get_cookie_params();
+        setcookie(session_name(), '', [
+            'expires' => time() - 42000,
+            'path' => $parametros['path'],
+            'domain' => $parametros['domain'],
+            'secure' => $parametros['secure'],
+            'httponly' => $parametros['httponly'],
+            'samesite' => $parametros['samesite'] ?? 'Lax',
+        ]);
+    }
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_destroy();
+    }
+}
+
+/** Confere o código exigido no cadastro público de organizadores (vazio na configuração = cadastro desativado). */
+function codigoOrganizadorValido(string $codigoInformado): bool
+{
+    $codigoEsperado = trim((string) appConfig('codigo_organizador'));
+
+    return $codigoEsperado !== '' && hash_equals($codigoEsperado, trim($codigoInformado));
+}
+
+/** Aviso exibido no início dos formulários com campos obrigatórios. */
+function renderRequiredFieldsNote(): void
+{
+    echo '<p class="required-fields-note">Campos marcados com <span class="campo-obrigatorio" aria-hidden="true">*</span> são obrigatórios.</p>';
 }
 
 function requireLogin(): array

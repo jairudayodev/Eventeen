@@ -127,6 +127,17 @@ try {
     $assert(limiteInatividadeSessao('administrador', true) === 12 * 3600, 'Administrador com "manter conectado": no máximo 12 horas.');
     $assert(assinaturaSenha('a') !== assinaturaSenha('b'), 'Senhas diferentes deveriam ter assinaturas diferentes.');
 
+    // Cadastro de organizador: exige o código configurado.
+    $codigo = (string) appConfig('codigo_organizador');
+    $assert($codigo === '' || codigoOrganizadorValido($codigo), 'O código configurado deveria ser aceito.');
+    $assert($codigo === '' || codigoOrganizadorValido('  ' . $codigo . ' '), 'Espaços em volta do código deveriam ser ignorados.');
+    $assert(!codigoOrganizadorValido('codigo-errado'), 'Código errado deveria ser recusado.');
+    $assert(!codigoOrganizadorValido(''), 'Código vazio deveria ser recusado.');
+
+    // Fuso horário: PHP e banco precisam concordar sobre a hora atual.
+    $diferenca = abs(strtotime((string) $pdo->query('SELECT NOW()')->fetchColumn()) - time());
+    $assert($diferenca < 5, 'O banco e o PHP deveriam usar o mesmo fuso horário (diferença de ' . $diferenca . ' s).');
+
     // E-mail: cabeçalhos codificados e sem quebra de linha injetada.
     $assert(codificarCabecalhoEmail("Inscrição\r\nBcc: x@y") === '=?UTF-8?B?' . base64_encode('Inscrição  Bcc: x@y') . '?=', 'Quebras de linha deveriam ser removidas do cabeçalho.');
     $assert(enviarEmail("x@example.invalid\r\nBcc: y@example.invalid", 'Teste', 'Corpo') === false, 'Destinatário inválido deveria ser recusado.');

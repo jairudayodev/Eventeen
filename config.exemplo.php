@@ -17,6 +17,13 @@ return [
     // Redireciona todo acesso HTTP para HTTPS (exige certificado instalado no servidor).
     'forcar_https' => true,
 
+    // Código que libera o cadastro público de organizadores. Deixe '' para desativar esse cadastro
+    // (aí só o administrador concede o perfil de organizador).
+    'codigo_organizador' => 'troque-este-codigo',
+
+    // Fuso horário dos eventos (o banco é ajustado para o mesmo fuso).
+    'fuso_horario' => 'America/Sao_Paulo',
+
     // Pasta de logs e e-mails gerados. De preferência, fora da pasta publicada na web.
     // 'pasta_dados' => '/var/eventeen-dados',
 

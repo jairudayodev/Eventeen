@@ -39,7 +39,7 @@ A partir daí, o administrador concede ou revoga os perfis de organizador e admi
 
 | Área | Funcionalidades |
 | --- | --- |
-| Acesso | Cadastro de participante ou organizador, login, "manter conectado", logout por POST com proteção CSRF, alteração de dados e de senha. O perfil é relido a cada requisição, então concessões e revogações valem imediatamente. |
+| Acesso | Cadastro em abas de participante ou organizador (organizador exige o código de acesso definido em `codigo_organizador`), login, "manter conectado", logout por POST com proteção CSRF, alteração de dados e de senha. Recuperação de senha por link enviado ao e-mail (válido por 60 minutos e de uso único). Login bloqueado temporariamente após 5 falhas para o mesmo e-mail (ou 20 do mesmo IP) em 15 minutos. A sessão expira após 2 horas sem uso (com "manter conectado": 30 dias para participante e 12 horas para gestão) e é encerrada nos outros dispositivos quando a senha muda. O perfil é relido a cada requisição, então concessões e revogações valem imediatamente. |
 | Administração | Painel com totais reais, busca e filtro de usuários, edição de dados e de perfil (participante, organizador, administrador), com proteção do último administrador e do organizador único de um evento ativo. Administradores também têm acesso às áreas de participante e organização, podendo gerenciar todos os eventos. |
 | Eventos | Cadastro, edição, publicação, cancelamento e encerramento, com vários organizadores, vagas, local e valor de inscrição opcional. As alterações preservam inscrições e demais registros. |
 | Consulta e inscrição | Busca e filtro de eventos publicados, detalhes com programação, vagas restantes e valor; inscrição transacional com bloqueio de concorrência e sem duplicidade; e-mail de confirmação da inscrição. |
@@ -118,6 +118,8 @@ Sem configuração, os e-mails (recuperação de senha e confirmação de inscri
    - `url_base`: endereço público, usado nos links dos e-mails e dos certificados;
    - `forcar_https` => `true`;
    - `db`: usuário e senha do banco;
+   - `codigo_organizador`: código exigido para criar conta de organizador no cadastro público (o padrão do repositório é público e deve ser trocado; `''` desativa esse cadastro);
+   - `fuso_horario`: fuso dos eventos (padrão `America/Sao_Paulo`); o banco é ajustado para o mesmo fuso a cada conexão;
    - `email`: servidor SMTP (porta 587 com `tls` ou 465 com `ssl`) e remetente.
 4. O `config.local.php` fica fora do Git: nunca envie senhas ao repositório. Se preferir, os dados do banco podem vir das variáveis de ambiente `EVENTEEN_DB_HOST`, `EVENTEEN_DB_NOME`, `EVENTEEN_DB_USUARIO` e `EVENTEEN_DB_SENHA`.
 5. A pasta `storage/` precisa de permissão de escrita para o PHP. No Apache, o `.htaccess` dela impede o acesso pela web; em outro servidor (como o Nginx), bloqueie a pasta na configuração ou aponte `pasta_dados` para fora da pasta publicada.
