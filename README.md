@@ -13,9 +13,9 @@ Projeto da disciplina de Engenharia de Software II (ADS, 2026). A documentação
 ## Configuração do banco de dados
 
 1. Inicie o Apache e o MySQL pelo XAMPP.
-2. No phpMyAdmin, abra **Importar**, selecione `banco.sql` e execute. O script cria o banco `eventeen`, as tabelas e três eventos de exemplo.
+2. No phpMyAdmin, abra **Importar**, selecione `banco.sql` e execute. O script cria o banco `eventeen`, as tabelas e dados de demonstração para usuários, eventos, programação, inscrições, certificados e financeiro.
 3. No XAMPP não é preciso configurar nada: o padrão é o usuário `root`, sem senha. Para outro ambiente, veja [Publicação em servidor](#publicação-em-servidor).
-4. Acesse `http://localhost/Eventeen/` e crie uma conta para começar.
+4. Acesse `http://localhost/Eventeen/` e entre com uma conta de demonstração ou crie uma conta.
 
 O arquivo também pode ser importado pelo terminal:
 
@@ -24,6 +24,17 @@ mysql -u root < banco.sql
 ```
 
 O `banco.sql` pode ser reimportado sobre um banco existente: ele cria as tabelas que faltam e adiciona as colunas novas (`eventos.valor_inscricao`, `patrocinios.tipo_apoio` e `patrocinios.descricao_apoio`) sem apagar dados.
+
+### Contas de demonstração
+
+| Perfil | E-mail | Senha |
+| --- | --- | --- |
+| Administrador | `admin.demo@eventeen.local` | `AdminDemo2026!` |
+| Organizador | `organizador.demo@eventeen.local` | `Organizador2026!` |
+| Participante | `participante.demo@eventeen.local` | `Participante2026!` |
+| Participante | `participante2.demo@eventeen.local` | `Participante2026!` |
+
+Essas contas e os dados relacionados são apenas para demonstração; altere ou remova as senhas padrão antes de disponibilizar o sistema publicamente.
 
 ### Primeiro administrador
 

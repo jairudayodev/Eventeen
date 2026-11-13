@@ -323,3 +323,228 @@ SELECT 'UX para Produtos Digitais',
        'Oficina prática de pesquisa com usuários, prototipação e avaliação de experiências digitais.',
        'Oficina', 'Sala 3', '2026-11-24 15:00:00', '2026-11-24 17:00:00', 30, 'publicado'
 WHERE NOT EXISTS (SELECT 1 FROM eventos WHERE titulo = 'UX para Produtos Digitais');
+
+-- Contas de demonstração. Senhas: AdminDemo2026!, Organizador2026! e Participante2026!.
+INSERT INTO usuarios (nome, email, matricula, senha_hash, perfil)
+SELECT 'Administração Eventeen', 'admin.demo@eventeen.local', NULL,
+       '$2y$10$eLmiSr47zvzBKz8mGYSOQeI3Az42Hq2R88O68pNc/hcKg/1LQuLEa', 'administrador'
+WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE email = 'admin.demo@eventeen.local');
+
+INSERT INTO usuarios (nome, email, matricula, senha_hash, perfil)
+SELECT 'Organização Eventeen', 'organizador.demo@eventeen.local', NULL,
+       '$2y$10$nhGmVP5y90sIQ2wjgdP3BOAfyd8LFtvt.qb9y.m0hicapFSalr8A6', 'organizador'
+WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE email = 'organizador.demo@eventeen.local');
+
+INSERT INTO usuarios (nome, email, matricula, senha_hash, perfil)
+SELECT 'Ana Participante', 'participante.demo@eventeen.local', 'DEMO-2026-001',
+       '$2y$10$VL7xQXcqqbWUYzAPIV.zKOWM14ZQTtVprLRd0jUo7.gmThR8NK/GC', 'participante'
+WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE email = 'participante.demo@eventeen.local');
+
+INSERT INTO usuarios (nome, email, matricula, senha_hash, perfil)
+SELECT 'Bruno Participante', 'participante2.demo@eventeen.local', 'DEMO-2026-002',
+       '$2y$10$VL7xQXcqqbWUYzAPIV.zKOWM14ZQTtVprLRd0jUo7.gmThR8NK/GC', 'participante'
+WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE email = 'participante2.demo@eventeen.local');
+
+INSERT INTO eventos
+    (titulo, descricao, categoria, local, data_inicio, data_fim, capacidade, valor_inscricao, status)
+SELECT 'Mostra de Projetos Acadêmicos',
+       'Apresentação de projetos desenvolvidos por estudantes, com palestras e oficinas abertas à comunidade.',
+       'Mostra acadêmica', 'Campus Fatec Ourinhos', '2026-11-10 09:00:00', '2026-11-10 17:00:00', 100, 0.00, 'encerrado'
+WHERE NOT EXISTS (SELECT 1 FROM eventos WHERE titulo = 'Mostra de Projetos Acadêmicos');
+
+INSERT INTO eventos
+    (titulo, descricao, categoria, local, data_inicio, data_fim, capacidade, valor_inscricao, status)
+SELECT 'Semana de Tecnologia e Inovação',
+       'Encontro acadêmico sobre inteligência artificial, desenvolvimento de software e empreendedorismo.',
+       'Tecnologia', 'Campus Fatec Ourinhos', '2026-12-10 09:00:00', '2026-12-10 18:00:00', 120, 25.00, 'publicado'
+WHERE NOT EXISTS (SELECT 1 FROM eventos WHERE titulo = 'Semana de Tecnologia e Inovação');
+
+INSERT INTO evento_organizadores (evento_id, usuario_id)
+SELECT e.id, u.id
+FROM eventos e
+JOIN usuarios u ON u.email = 'organizador.demo@eventeen.local'
+WHERE e.titulo IN ('Mostra de Projetos Acadêmicos', 'Semana de Tecnologia e Inovação')
+  AND NOT EXISTS (
+      SELECT 1 FROM evento_organizadores eo
+      WHERE eo.evento_id = e.id AND eo.usuario_id = u.id
+  );
+
+INSERT INTO espacos (evento_id, nome, capacidade, recursos)
+SELECT e.id, 'Auditório Principal', 100, 'Projetor, microfone, sistema de som e acessibilidade'
+FROM eventos e
+WHERE e.titulo = 'Mostra de Projetos Acadêmicos'
+  AND NOT EXISTS (SELECT 1 FROM espacos s WHERE s.evento_id = e.id AND s.nome = 'Auditório Principal');
+
+INSERT INTO espacos (evento_id, nome, capacidade, recursos)
+SELECT e.id, 'Laboratório de Informática', 30, 'Computadores, internet e projetor'
+FROM eventos e
+WHERE e.titulo = 'Mostra de Projetos Acadêmicos'
+  AND NOT EXISTS (SELECT 1 FROM espacos s WHERE s.evento_id = e.id AND s.nome = 'Laboratório de Informática');
+
+INSERT INTO espacos (evento_id, nome, capacidade, recursos)
+SELECT e.id, 'Auditório Principal', 120, 'Projetor, microfone, sistema de som e acessibilidade'
+FROM eventos e
+WHERE e.titulo = 'Semana de Tecnologia e Inovação'
+  AND NOT EXISTS (SELECT 1 FROM espacos s WHERE s.evento_id = e.id AND s.nome = 'Auditório Principal');
+
+INSERT INTO espacos (evento_id, nome, capacidade, recursos)
+SELECT e.id, 'Sala de Oficinas', 30, 'Computadores, internet e quadro branco'
+FROM eventos e
+WHERE e.titulo = 'Semana de Tecnologia e Inovação'
+  AND NOT EXISTS (SELECT 1 FROM espacos s WHERE s.evento_id = e.id AND s.nome = 'Sala de Oficinas');
+
+INSERT INTO palestrantes (evento_id, nome, email, bio)
+SELECT e.id, 'Marina Costa', 'marina.costa.demo@eventeen.local',
+       'Pesquisadora em inovação e orientação de projetos acadêmicos.'
+FROM eventos e
+WHERE e.titulo = 'Mostra de Projetos Acadêmicos'
+  AND NOT EXISTS (SELECT 1 FROM palestrantes p WHERE p.evento_id = e.id AND p.email = 'marina.costa.demo@eventeen.local');
+
+INSERT INTO palestrantes (evento_id, nome, email, bio)
+SELECT e.id, 'Rafael Almeida', 'rafael.almeida.demo@eventeen.local',
+       'Especialista em desenvolvimento de software e inteligência artificial.'
+FROM eventos e
+WHERE e.titulo = 'Semana de Tecnologia e Inovação'
+  AND NOT EXISTS (SELECT 1 FROM palestrantes p WHERE p.evento_id = e.id AND p.email = 'rafael.almeida.demo@eventeen.local');
+
+INSERT INTO palestrantes (evento_id, nome, email, bio)
+SELECT e.id, 'Camila Souza', 'camila.souza.demo@eventeen.local',
+       'Designer de produtos digitais e facilitadora de oficinas de experiência do usuário.'
+FROM eventos e
+WHERE e.titulo = 'Semana de Tecnologia e Inovação'
+  AND NOT EXISTS (SELECT 1 FROM palestrantes p WHERE p.evento_id = e.id AND p.email = 'camila.souza.demo@eventeen.local');
+
+INSERT INTO atividades (evento_id, espaco_id, titulo, descricao, tipo, inicio, fim, capacidade)
+SELECT e.id, s.id, 'Abertura e apresentação dos projetos',
+       'Boas-vindas e apresentação dos trabalhos acadêmicos selecionados.',
+       'Palestra', '2026-11-10 09:30:00', '2026-11-10 10:30:00', 100
+FROM eventos e
+JOIN espacos s ON s.evento_id = e.id AND s.nome = 'Auditório Principal'
+WHERE e.titulo = 'Mostra de Projetos Acadêmicos'
+  AND NOT EXISTS (SELECT 1 FROM atividades a WHERE a.evento_id = e.id AND a.titulo = 'Abertura e apresentação dos projetos');
+
+INSERT INTO atividades (evento_id, espaco_id, titulo, descricao, tipo, inicio, fim, capacidade)
+SELECT e.id, s.id, 'Prototipação de soluções',
+       'Oficina prática de ideação e prototipação de soluções para problemas reais.',
+       'Oficina', '2026-11-10 14:00:00', '2026-11-10 16:00:00', 25
+FROM eventos e
+JOIN espacos s ON s.evento_id = e.id AND s.nome = 'Laboratório de Informática'
+WHERE e.titulo = 'Mostra de Projetos Acadêmicos'
+  AND NOT EXISTS (SELECT 1 FROM atividades a WHERE a.evento_id = e.id AND a.titulo = 'Prototipação de soluções');
+
+INSERT INTO atividades (evento_id, espaco_id, titulo, descricao, tipo, inicio, fim, capacidade)
+SELECT e.id, s.id, 'Inteligência artificial aplicada',
+       'Panorama de aplicações de inteligência artificial em produtos e serviços.',
+       'Palestra', '2026-12-10 09:30:00', '2026-12-10 11:00:00', 100
+FROM eventos e
+JOIN espacos s ON s.evento_id = e.id AND s.nome = 'Auditório Principal'
+WHERE e.titulo = 'Semana de Tecnologia e Inovação'
+  AND NOT EXISTS (SELECT 1 FROM atividades a WHERE a.evento_id = e.id AND a.titulo = 'Inteligência artificial aplicada');
+
+INSERT INTO atividades (evento_id, espaco_id, titulo, descricao, tipo, inicio, fim, capacidade)
+SELECT e.id, s.id, 'Oficina de experiência do usuário',
+       'Exercício de pesquisa, jornada do usuário e prototipação de interfaces.',
+       'Oficina', '2026-12-10 14:00:00', '2026-12-10 16:00:00', 30
+FROM eventos e
+JOIN espacos s ON s.evento_id = e.id AND s.nome = 'Sala de Oficinas'
+WHERE e.titulo = 'Semana de Tecnologia e Inovação'
+  AND NOT EXISTS (SELECT 1 FROM atividades a WHERE a.evento_id = e.id AND a.titulo = 'Oficina de experiência do usuário');
+
+INSERT INTO atividade_palestrantes (atividade_id, palestrante_id, evento_id)
+SELECT a.id, p.id, a.evento_id
+FROM atividades a
+JOIN eventos e ON e.id = a.evento_id
+JOIN palestrantes p ON p.evento_id = e.id
+WHERE (
+       (e.titulo = 'Mostra de Projetos Acadêmicos' AND a.titulo = 'Abertura e apresentação dos projetos'
+        AND p.email = 'marina.costa.demo@eventeen.local')
+    OR (e.titulo = 'Mostra de Projetos Acadêmicos' AND a.titulo = 'Prototipação de soluções'
+        AND p.email = 'marina.costa.demo@eventeen.local')
+    OR (e.titulo = 'Semana de Tecnologia e Inovação' AND a.titulo = 'Inteligência artificial aplicada'
+        AND p.email = 'rafael.almeida.demo@eventeen.local')
+    OR (e.titulo = 'Semana de Tecnologia e Inovação' AND a.titulo = 'Oficina de experiência do usuário'
+        AND p.email = 'camila.souza.demo@eventeen.local')
+)
+  AND NOT EXISTS (
+      SELECT 1 FROM atividade_palestrantes ap
+      WHERE ap.atividade_id = a.id AND ap.palestrante_id = p.id AND ap.evento_id = a.evento_id
+  );
+
+INSERT INTO inscricoes (usuario_id, evento_id, status)
+SELECT u.id, e.id, 'ativa'
+FROM usuarios u
+JOIN eventos e ON e.titulo IN ('Mostra de Projetos Acadêmicos', 'Semana de Tecnologia e Inovação')
+WHERE u.email IN ('participante.demo@eventeen.local', 'participante2.demo@eventeen.local')
+  AND NOT EXISTS (
+      SELECT 1 FROM inscricoes i WHERE i.usuario_id = u.id AND i.evento_id = e.id
+  );
+
+INSERT INTO presencas_atividades (atividade_id, evento_id, usuario_id)
+SELECT a.id, a.evento_id, u.id
+FROM atividades a
+JOIN eventos e ON e.id = a.evento_id
+JOIN usuarios u ON u.email = 'participante.demo@eventeen.local'
+JOIN inscricoes i ON i.usuario_id = u.id AND i.evento_id = e.id
+WHERE e.titulo = 'Mostra de Projetos Acadêmicos'
+  AND a.titulo IN ('Abertura e apresentação dos projetos', 'Prototipação de soluções')
+  AND NOT EXISTS (
+      SELECT 1 FROM presencas_atividades pa
+      WHERE pa.atividade_id = a.id AND pa.usuario_id = u.id
+  );
+
+INSERT INTO certificados (atividade_id, usuario_id, evento_id, codigo_validacao, carga_horaria)
+SELECT a.id, u.id, a.evento_id,
+       IF(a.titulo = 'Abertura e apresentação dos projetos', 'EVT2026DEMO00001', 'EVT2026DEMO00002'),
+       IF(a.titulo = 'Abertura e apresentação dos projetos', 1.00, 2.00)
+FROM atividades a
+JOIN eventos e ON e.id = a.evento_id
+JOIN usuarios u ON u.email = 'participante.demo@eventeen.local'
+JOIN presencas_atividades pa ON pa.atividade_id = a.id AND pa.usuario_id = u.id
+WHERE e.titulo = 'Mostra de Projetos Acadêmicos'
+  AND a.titulo IN ('Abertura e apresentação dos projetos', 'Prototipação de soluções')
+  AND NOT EXISTS (
+      SELECT 1 FROM certificados c WHERE c.atividade_id = a.id AND c.usuario_id = u.id
+  );
+
+INSERT INTO parceiros (criado_por, nome, email, telefone)
+SELECT u.id, 'Nuvem do Vale Tecnologia', 'contato.demo@nuvemdovale.local', '(14) 3000-0000'
+FROM usuarios u
+WHERE u.email = 'organizador.demo@eventeen.local'
+  AND NOT EXISTS (
+      SELECT 1 FROM parceiros p
+      WHERE p.criado_por = u.id AND p.email = 'contato.demo@nuvemdovale.local'
+  );
+
+INSERT INTO patrocinios
+    (evento_id, parceiro_id, tipo_apoio, cota, descricao_apoio, contrapartida, valor, status)
+SELECT e.id, p.id, 'financeiro', 'Ouro', 'Apoio financeiro para infraestrutura e materiais.',
+       'Exibição da marca nos materiais e no local do evento.', 1500.00, 'confirmado'
+FROM eventos e
+JOIN parceiros p ON p.email = 'contato.demo@nuvemdovale.local'
+WHERE e.titulo = 'Semana de Tecnologia e Inovação'
+  AND NOT EXISTS (
+      SELECT 1 FROM patrocinios pa WHERE pa.evento_id = e.id AND pa.parceiro_id = p.id AND pa.cota = 'Ouro'
+  );
+
+INSERT INTO financeiro_lancamentos
+    (criado_por, patrocinio_id, descricao, tipo, valor, data_movimentacao, status)
+SELECT u.id, pa.id, 'Patrocínio confirmado - Nuvem do Vale', 'entrada', 1500.00, '2026-11-01', 'realizado'
+FROM usuarios u
+JOIN patrocinios pa ON pa.cota = 'Ouro'
+JOIN eventos e ON e.id = pa.evento_id AND e.titulo = 'Semana de Tecnologia e Inovação'
+JOIN parceiros p ON p.id = pa.parceiro_id AND p.email = 'contato.demo@nuvemdovale.local'
+WHERE u.email = 'organizador.demo@eventeen.local'
+  AND NOT EXISTS (
+      SELECT 1 FROM financeiro_lancamentos fl
+      WHERE fl.patrocinio_id = pa.id AND fl.descricao = 'Patrocínio confirmado - Nuvem do Vale'
+  );
+
+INSERT INTO financeiro_rateios (lancamento_id, evento_id, valor)
+SELECT fl.id, e.id, fl.valor
+FROM financeiro_lancamentos fl
+JOIN patrocinios pa ON pa.id = fl.patrocinio_id
+JOIN eventos e ON e.id = pa.evento_id AND e.titulo = 'Semana de Tecnologia e Inovação'
+WHERE fl.descricao = 'Patrocínio confirmado - Nuvem do Vale'
+  AND NOT EXISTS (
+      SELECT 1 FROM financeiro_rateios fr WHERE fr.lancamento_id = fl.id AND fr.evento_id = e.id
+  );
