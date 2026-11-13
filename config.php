@@ -94,7 +94,7 @@ if (appEmProducao()) {
                 header('Content-Type: text/html; charset=UTF-8');
             }
             echo '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">'
-                . '<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Erro | Eventeen</title></head>'
+                . '<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Erro | Eventeen: do convite ao certificado</title></head>'
                 . '<body style="font-family:system-ui,sans-serif;max-width:32rem;margin:15vh auto;padding:0 1rem;color:#1f2937">'
                 . '<h1 style="color:#c0172d">Algo deu errado</h1>'
                 . '<p>Não foi possível concluir a operação agora. Tente novamente em alguns instantes.</p>'

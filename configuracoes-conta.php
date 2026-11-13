@@ -112,7 +112,7 @@ $prefixo = applicationRootPrefix();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#c0172d">
-    <title>Configurações da conta | Eventeen</title>
+    <title>Configurações da conta | Eventeen: do convite ao certificado</title>
     <link rel="stylesheet" href="<?= h(applicationBasePath()) ?>/css/style.css">
 </head>
 <body class="app-body">

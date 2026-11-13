@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#c0172d">
-    <title>Criar conta | Eventeen</title>
+    <title>Criar conta | Eventeen: do convite ao certificado</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <header class="auth-header">
                 <p class="eyebrow">Faça parte da nossa comunidade</p>
                 <h1 id="titulo">Criar conta</h1>
-                <p class="subtitulo">Seu acesso aos eventos acadêmicos.</p>
+                <p class="subtitulo">Do convite ao certificado.</p>
                 <p class="ajuda ajuda--obrigatorios">Campos marcados com <strong class="campo-obrigatorio">*</strong> são obrigatórios.</p>
             </header>
 

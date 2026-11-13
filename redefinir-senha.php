@@ -27,7 +27,7 @@ $usuarioDoLink = usuarioDoTokenRedefinicao($pdo, $token);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#c0172d">
     <meta name="referrer" content="no-referrer">
-    <title>Nova senha | Eventeen</title>
+    <title>Nova senha | Eventeen: do convite ao certificado</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>

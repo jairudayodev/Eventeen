@@ -72,7 +72,7 @@ function renderManagementStart(array $usuario, string $titulo, string $descricao
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="theme-color" content="#c0172d">
-        <title><?= h($titulo) ?> | Eventeen</title>
+        <title><?= h($titulo) ?> | Eventeen: do convite ao certificado</title>
         <link rel="stylesheet" href="../css/style.css">
         <link rel="stylesheet" href="../css/gestao.css">
     </head>

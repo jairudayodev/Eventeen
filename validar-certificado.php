@@ -13,7 +13,7 @@ $certificado = $codigo !== '' ? buscarCertificadoPorCodigo($pdo, $codigo) : null
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#c0172d">
-    <title>Validar certificado | Eventeen</title>
+    <title>Validar certificado | Eventeen: do convite ao certificado</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>

@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#c0172d">
-    <title>Entrar | Eventeen</title>
+    <title>Entrar | Eventeen: do convite ao certificado</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <header class="auth-header">
                 <p class="eyebrow">Fatec Ourinhos</p>
                 <h1 id="titulo">Bem-vindo ao Eventeen</h1>
-                <p class="subtitulo">Eventos acadêmicos em um só lugar.</p>
+                <p class="subtitulo">Do convite ao certificado.</p>
             </header>
 
             <?php if ($erro !== null): ?>
